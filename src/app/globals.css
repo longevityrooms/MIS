@@ -553,15 +553,64 @@ select option {
 /* Utility: margin-top-16 for card gaps */
 .mt-16 { margin-top: 16px; }
 
-/* ══ COMPREHENSIVE RESPONSIVE ══════════════════════════════ */
-
-/* Tablet */
-@media(max-width:900px){
-  #ai-panel { display: none; }
+/* ══ MOBILE AI CHAT (overlay for small screens) ══════════ */
+.mob-ai-fab {
+  display: none; position: fixed; z-index: 250;
+  bottom: 84px; right: 16px;
+  width: 50px; height: 50px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--forest), var(--forest2));
+  border: 2px solid rgba(184,115,51,0.4);
+  color: var(--cream); font-size: 20px;
+  cursor: pointer; align-items: center; justify-content: center;
+  box-shadow: 0 6px 24px rgba(47,79,79,0.4), 0 2px 8px rgba(0,0,0,0.15);
+  transition: all 0.2s;
+}
+.mob-ai-fab:hover { transform: scale(1.08); }
+.mob-ai-fab .fab-badge {
+  position: absolute; top: -2px; right: -2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--bronze); border: 2px solid var(--cream3);
 }
 
-/* Mobile landscape / small tablet */
-@media(max-width:700px){
+.mob-ai-overlay {
+  display: none; position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.mob-ai-overlay.open { display: flex; flex-direction: column; }
+
+.mob-ai-panel {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  max-height: 85vh; display: flex; flex-direction: column;
+  background: rgba(250,244,236,0.95);
+  backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  border-top: 1px solid rgba(184,115,51,0.3);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 40px rgba(47,79,79,0.2);
+  animation: slideUp 0.25s ease-out;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.mob-ai-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: rgba(184,115,51,0.3); margin: 10px auto 6px;
+}
+
+/* ══ COMPREHENSIVE RESPONSIVE ══════════════════════════════ */
+
+/* Desktop narrow — AI panel narrower */
+@media(max-width:1100px){
+  #ai-panel { width: 280px; }
+}
+
+/* Tablet — AI panel hidden, show FAB */
+@media(max-width:900px){
+  #ai-panel { display: none; }
+  .mob-ai-fab { display: flex; }
+}
+
+/* Samsung Fold open / small tablet (~717px) */
+@media(max-width:768px){
   .grid4 { grid-template-columns: 1fr 1fr; }
   .grid3 { grid-template-columns: 1fr 1fr; }
 
@@ -571,6 +620,7 @@ select option {
     flex-wrap: nowrap; overflow: hidden;
   }
   .top-logo { flex-shrink: 0; }
+  .top-logo img { height: 26px !important; }
   .top-brand { font-size: 12px; }
   .top-sub-text { font-size: 8px; letter-spacing: 1px; }
   .top-emblem { width: 28px; height: 28px; font-size: 12px; }
@@ -580,37 +630,52 @@ select option {
   .rag-pill { font-size: 9px; padding: 3px 8px; }
   .logout-btn { font-size: 9px; padding: 4px 8px; letter-spacing: 0.5px; }
   .u-name-sm { font-size: 10px; }
+  .u-role-pill { display: none; }
 
   /* Sidebar hidden on mobile — use bottom nav instead */
   #sidebar { display: none; }
   #mobile-nav { display: block; }
 
   /* Main padding + bottom nav clearance */
-  #main { padding: 14px 14px 80px; gap: 14px; }
+  #main { padding: 14px 14px 84px; gap: 14px; }
 
   /* Login card */
   .login-wrap { padding: 28px 20px; border-radius: 20px; }
   .login-brand-name { font-size: 18px; }
   .login-title { font-size: 24px; }
+
+  /* Gantt responsive */
+  .gtbl { min-width: 600px; }
+  .gtbl th:first-child { min-width: 120px; }
+  .gtbl td:first-child { font-size: 11px; }
+  .gc { width: 20px; height: 14px; }
 }
 
-/* Mobile portrait */
+/* Mobile portrait / Samsung Fold closed (~360px) */
 @media(max-width:480px){
   .grid2,.grid3,.grid4 { grid-template-columns: 1fr; }
   .role-grid { grid-template-columns: 1fr 1fr; }
 
   /* Topbar strip — minimal */
-  #topbar { padding: 8px 12px; gap: 8px; }
+  #topbar { padding: 6px 10px; gap: 6px; min-height: 46px; }
+  .top-logo img { height: 22px !important; }
   .top-brand { font-size: 11px; line-height: 1.2; }
   .top-sub-text { display: none; }
-  .top-right { gap: 5px; }
+  .top-right { gap: 4px; }
   .wk-pill { display: none; }
+  .rag-pill { font-size: 8px; padding: 2px 6px; }
   .u-name-sm { display: none; }
+  .u-av-sm { width: 24px; height: 24px; font-size: 9px; }
+  .logout-btn { font-size: 8px; padding: 3px 6px; letter-spacing: 0.3px; }
+
+  /* Divider between logo and title hidden */
+  .top-logo + div[style*="width: 1px"] { display: none; }
 
   /* Cards */
-  .glass-card { padding: 16px; border-radius: 14px; }
-  .stat { padding: 16px; border-radius: 14px; }
-  .stat-val { font-size: 24px; }
+  .glass-card { padding: 14px; border-radius: 14px; }
+  .stat { padding: 14px; border-radius: 14px; }
+  .stat-val { font-size: 22px; }
+  .stat-lbl { font-size: 9px; letter-spacing: 1px; }
 
   /* Investor metrics stack */
   .inv-v { font-size: 28px; }
@@ -635,6 +700,22 @@ select option {
   .ann-ttl { font-size: 14px; }
   .ann-body { font-size: 12px; }
 
+  /* Documents */
+  .doc { padding: 10px; gap: 10px; }
+  .d-icon { width: 30px; height: 30px; border-radius: 7px; font-size: 13px; }
+  .d-name { font-size: 12px; }
+
+  /* Mobile nav tighter */
+  .mob-nav-item { padding: 5px 6px; min-width: 40px; }
+  .mob-nav-icon { font-size: 15px; }
+  .mob-nav-lbl { font-size: 8px; }
+
+  /* FAB position adjusted */
+  .mob-ai-fab { bottom: 78px; right: 12px; width: 44px; height: 44px; font-size: 18px; }
+
+  /* Mobile AI panel fills more */
+  .mob-ai-panel { max-height: 90vh; border-radius: 16px 16px 0 0; }
+
   /* Login */
   .login-wrap { padding: 24px 16px; }
   .role-grid { gap: 8px; }
@@ -642,4 +723,17 @@ select option {
   .r-nm { font-size: 12px; }
   .r-av { width: 32px; height: 32px; }
   .login-btn { font-size: 12px; padding: 14px; }
+}
+
+/* Very narrow — Samsung Fold inner screen when app is split */
+@media(max-width:320px){
+  #topbar { padding: 4px 8px; }
+  .top-logo img { height: 18px !important; }
+  .rag-pill { display: none; }
+  .logout-btn { display: none; }
+  #main { padding: 10px 10px 80px; gap: 10px; }
+  .glass-card { padding: 12px; border-radius: 12px; }
+  .card-title { font-size: 10px; letter-spacing: 1px; }
+  .mob-nav-lbl { display: none; }
+  .mob-nav-item { min-width: 36px; }
 }

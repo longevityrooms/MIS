@@ -16,6 +16,7 @@ interface AppShellProps {
 export default function AppShell({ children }: AppShellProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showMobileChat, setShowMobileChat] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
@@ -53,6 +54,11 @@ export default function AppShell({ children }: AppShellProps) {
 
     loadProfile();
   }, [router, supabase]);
+
+  // Close mobile chat on route change
+  useEffect(() => {
+    setShowMobileChat(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     localStorage.removeItem('demo-profile');
@@ -107,7 +113,7 @@ export default function AppShell({ children }: AppShellProps) {
             {children}
           </div>
 
-          {/* AI Chat Panel */}
+          {/* Desktop AI Chat Panel */}
           <div id="ai-panel">
             <ChatWidget role={profile.role} />
           </div>
@@ -115,6 +121,51 @@ export default function AppShell({ children }: AppShellProps) {
 
         {/* Mobile bottom navigation */}
         <MobileNav role={profile.role} currentPath={pathname} />
+
+        {/* Mobile AI Chat FAB button */}
+        <button
+          className="mob-ai-fab"
+          onClick={() => setShowMobileChat(true)}
+          aria-label="KI-Assistent öffnen"
+        >
+          <span style={{ lineHeight: 1 }}>&#9679;</span>
+          <div className="fab-badge" />
+        </button>
+
+        {/* Mobile AI Chat Overlay */}
+        <div
+          className={`mob-ai-overlay${showMobileChat ? ' open' : ''}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowMobileChat(false);
+          }}
+        >
+          <div className="mob-ai-panel">
+            <div className="mob-ai-handle" />
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '4px 18px 10px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="ai-dot" />
+                <span className="ai-title">KI-Assistent</span>
+              </div>
+              <button
+                onClick={() => setShowMobileChat(false)}
+                style={{
+                  background: 'rgba(47,79,79,0.08)', border: '1px solid rgba(47,79,79,0.15)',
+                  borderRadius: '8px', padding: '4px 10px', cursor: 'pointer',
+                  fontSize: '11px', color: 'var(--forest)', fontWeight: 700,
+                  fontFamily: 'var(--f-body)',
+                }}
+              >
+                Schließen
+              </button>
+            </div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <ChatWidget role={profile.role} />
+            </div>
+          </div>
+        </div>
       </div>
     </>
   );
