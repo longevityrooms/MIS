@@ -155,32 +155,32 @@ export const PROJECT_DOCUMENTS = [
 ];
 
 export const GANTT_DATA = [
-  { label: 'PHASE 1 — Strategie & Gründung', color: '#2F4F4F', tasks: [
-    { name: 'GmbH-Gründung & Rechtsstruktur', active: [1,2] },
-    { name: 'Gesundheitsamt-Anmeldung', active: [2,3,4] },
-    { name: 'Mietvertrag Schiller Str. 31', active: [2,3] },
-    { name: 'Architekt & Auftragnehmer', active: [3,4,5] },
-    { name: 'Ärztliche Leitung Einstellung', active: [3,4,5,6] },
+  { label: 'PHASE 1 — Strategie & Gründung', color: '#2F4F4F', link: '/tasks', tasks: [
+    { name: 'GmbH-Gründung & Rechtsstruktur', active: [1,2], status: 'done' as const, link: '/documents' },
+    { name: 'Gesundheitsamt-Anmeldung', active: [2,3,4], status: 'done' as const, link: '/documents' },
+    { name: 'Mietvertrag Schiller Str. 31', active: [2,3], status: 'done' as const, link: '/documents' },
+    { name: 'Architekt & Auftragnehmer', active: [3,4,5], status: 'done' as const, link: '/tasks' },
+    { name: 'Ärztliche Leitung Einstellung', active: [3,4,5,6], status: 'done' as const, link: '/tasks' },
   ]},
-  { label: 'PHASE 2 — Umbau & Beschaffung', color: '#B87333', tasks: [
-    { name: 'Umbau & Renovierung', active: [6,7,8,9,10,11,12,13] },
-    { name: 'HBOT-Suite TÜV-konform', active: [6,7,8,9,10,11,12] },
-    { name: 'Tier-1-Gerätebestellung', active: [5,6,7] },
-    { name: 'KIS & IT-Infrastruktur', active: [5,6,7,8,9] },
-    { name: 'Labor & Apothekenverträge', active: [4,5,6] },
+  { label: 'PHASE 2 — Umbau & Beschaffung', color: '#B87333', link: '/tasks', tasks: [
+    { name: 'Umbau & Renovierung', active: [6,7,8,9,10,11,12,13], status: 'active' as const, link: '/tasks' },
+    { name: 'HBOT-Suite TÜV-konform', active: [6,7,8,9,10,11,12], status: 'active' as const, link: '/risks' },
+    { name: 'Tier-1-Gerätebestellung', active: [5,6,7], status: 'done' as const, link: '/budget' },
+    { name: 'KIS & IT-Infrastruktur', active: [5,6,7,8,9], status: 'active' as const, link: '/tasks' },
+    { name: 'Labor & Apothekenverträge', active: [4,5,6], status: 'done' as const, link: '/documents' },
   ]},
-  { label: 'PHASE 3 — Zulassung & Prüfungen', color: '#4d7c7c', tasks: [
-    { name: 'HBOT-Druckkammer TÜV-Abnahme', active: [11,12,13] },
-    { name: 'KV-Zulassung', active: [12,13] },
-    { name: 'Brandschutz & Baugenehmigung', active: [12,13,14] },
+  { label: 'PHASE 3 — Zulassung & Prüfungen', color: '#4d7c7c', link: '/risks', tasks: [
+    { name: 'HBOT-Druckkammer TÜV-Abnahme', active: [11,12,13], status: 'pending' as const, link: '/risks' },
+    { name: 'KV-Zulassung', active: [12,13], status: 'pending' as const, link: '/documents' },
+    { name: 'Brandschutz & Baugenehmigung', active: [12,13,14], status: 'pending' as const, link: '/risks' },
   ]},
-  { label: 'PHASE 4 — Schulung & Soft-Launch', color: '#8b6914', tasks: [
-    { name: 'BLS/ILS-Zertifizierungen', active: [14,15] },
-    { name: 'HBOT-Bedienerschulung', active: [14,15,16] },
-    { name: 'Soft-Launch', active: [16,17] },
+  { label: 'PHASE 4 — Schulung & Soft-Launch', color: '#8b6914', link: '/tasks', tasks: [
+    { name: 'BLS/ILS-Zertifizierungen', active: [14,15], status: 'pending' as const, link: '/tasks' },
+    { name: 'HBOT-Bedienerschulung', active: [14,15,16], status: 'pending' as const, link: '/tasks' },
+    { name: 'Soft-Launch', active: [16,17], status: 'pending' as const, link: '/announcements' },
   ]},
-  { label: 'PHASE 5 — Große Eröffnung', color: '#5a8080', tasks: [
-    { name: 'Große Eröffnung', active: [18] },
-    { name: 'Tier-2-Aktivierung', active: [17,18] },
+  { label: 'PHASE 5 — Große Eröffnung', color: '#5a8080', link: '/announcements', tasks: [
+    { name: 'Große Eröffnung', active: [18], status: 'pending' as const, link: '/announcements' },
+    { name: 'Tier-2-Aktivierung', active: [17,18], status: 'pending' as const, link: '/budget' },
   ]},
 ];
