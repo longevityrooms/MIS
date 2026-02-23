@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(head:*)",
+      "Bash(sleep 4:*)",
+      "Bash(sleep 1:*)",
+      "WebFetch(domain:github.com)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(npm run build:*)",
+      "Bash(gh auth status:*)",
+      "Bash(git --version:*)",
+      "Bash(gh auth login:*)",
+      "Bash(git init:*)",
+      "Bash(git branch:*)",
+      "Bash(git remote add:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
