@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import { PROJECT_DOCUMENTS } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
+import DetailModal from '@/components/DetailModal';
 
 const iconClass: Record<string, string> = {
   pdf: 'dp', docx: 'dd', xlsx: 'dx', pptx: 'dpp',
@@ -43,6 +44,8 @@ function getFileExtension(name: string): string {
   return name.split('.').pop()?.toLowerCase() || 'pdf';
 }
 
+type ModalContent = { title: string; body: React.ReactNode } | null;
+
 export default function DocumentsPage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [showUpload, setShowUpload] = useState(false);
@@ -50,6 +53,7 @@ export default function DocumentsPage() {
   const [uploadSettings, setUploadSettings] = useState({ access: 'Alle Rollen', category: 'Allgemein' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('Alle');
+  const [modal, setModal] = useState<ModalContent>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allDocs = [
@@ -85,6 +89,24 @@ export default function DocumentsPage() {
 
   const removeUploaded = (index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const openDoc = (doc: { name: string; type: string; date: string; size: string; access: string; category: string; isUploaded: boolean }) => {
+    setModal({
+      title: doc.name,
+      body: (
+        <>
+          <div className="detail-field"><span className="detail-label">Typ</span><span className="detail-value">{doc.type.toUpperCase()}</span></div>
+          <div className="detail-field"><span className="detail-label">Datum</span><span className="detail-value">{doc.date}</span></div>
+          <div className="detail-field"><span className="detail-label">Größe</span><span className="detail-value">{doc.size}</span></div>
+          <div className="detail-field"><span className="detail-label">Zugriff</span><span className="detail-value">{doc.access}</span></div>
+          <div className="detail-field"><span className="detail-label">Kategorie</span><span className="detail-value">{doc.category}</span></div>
+          {doc.isUploaded && (
+            <div className="detail-field"><span className="detail-label">Quelle</span><span className="detail-value" style={{ color: 'var(--forest)' }}>Hochgeladen</span></div>
+          )}
+        </>
+      ),
+    });
   };
 
   return (
@@ -229,7 +251,7 @@ export default function DocumentsPage() {
           const uploadedIndex = isUploaded ? uploadedFiles.findIndex(f => f.name === doc.name) : -1;
 
           return (
-            <div key={`${doc.name}-${i}`} className="doc" style={{ position: 'relative' }}>
+            <div key={`${doc.name}-${i}`} className="doc" data-clickable onClick={() => openDoc(doc)} style={{ position: 'relative' }}>
               <div className={`d-icon ${iconClass[ext] || 'dp'}`}>
                 {iconEmoji[ext] || '\u{1F4C4}'}
               </div>
@@ -299,6 +321,10 @@ export default function DocumentsPage() {
       </div>
 
       <DripfyFooter />
+
+      <DetailModal open={!!modal} onClose={() => setModal(null)} title={modal?.title || ''}>
+        {modal?.body}
+      </DetailModal>
     </AppShell>
   );
 }

@@ -737,3 +737,216 @@ select option {
   .mob-nav-lbl { display: none; }
   .mob-nav-item { min-width: 36px; }
 }
+
+/* ═══════════════════════════════════════════════════
+   Detail Modal — slide-right (desktop) / slide-up (mobile)
+   ═══════════════════════════════════════════════════ */
+
+/* Backdrop */
+.detail-overlay {
+  position: fixed; inset: 0; z-index: 279;
+  background: rgba(0,0,0,0.45);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .3s ease;
+}
+.detail-overlay.open { opacity: 1; pointer-events: auto; }
+
+/* Panel — desktop: slide from right */
+.detail-panel {
+  position: fixed; top: 0; right: 0; bottom: 0; z-index: 280;
+  width: 480px; max-width: 90vw;
+  background: rgba(245,230,211,0.92);
+  -webkit-backdrop-filter: blur(30px) saturate(160%);
+  backdrop-filter: blur(30px) saturate(160%);
+  border-left: 1px solid rgba(184,115,51,0.15);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.15);
+  display: flex; flex-direction: column;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.detail-panel.open { transform: translateX(0); }
+
+/* Hide drag handle on desktop */
+.detail-handle { display: none; }
+
+/* Header */
+.detail-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid rgba(184,115,51,0.12);
+}
+.detail-title {
+  font-family: var(--f-head); font-size: 18px; font-weight: 700;
+  color: var(--forest); letter-spacing: 0.3px;
+}
+.detail-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(47,79,79,0.08); border: none;
+  font-size: 16px; color: var(--text-light); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .2s;
+}
+.detail-close:hover { background: rgba(47,79,79,0.15); color: var(--forest); }
+
+/* Body */
+.detail-body {
+  flex: 1; overflow-y: auto; padding: 18px 20px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Field rows inside modal */
+.detail-field {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(184,115,51,0.08);
+}
+.detail-field:last-child { border-bottom: none; }
+.detail-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--bronze);
+  font-family: var(--f-body); min-width: 100px;
+}
+.detail-value {
+  font-size: 13px; color: var(--text); font-family: var(--f-body);
+  text-align: right; flex: 1; line-height: 1.5;
+}
+
+/* Section inside modal */
+.detail-section {
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid rgba(184,115,51,0.12);
+}
+.detail-section-title {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+  text-transform: uppercase; color: var(--forest);
+  margin-bottom: 10px; font-family: var(--f-body);
+}
+
+/* Clickable cards */
+.stat[data-clickable], .task[data-clickable], .risk[data-clickable],
+.phase-row[data-clickable], .ms-row[data-clickable], .brow[data-clickable],
+.ann[data-clickable], .doc[data-clickable], .g-row[data-clickable] {
+  cursor: pointer; transition: transform .15s, box-shadow .15s;
+}
+.stat[data-clickable]:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+.task[data-clickable]:hover, .risk[data-clickable]:hover,
+.ann[data-clickable]:hover, .doc[data-clickable]:hover { background: rgba(184,115,51,0.04); }
+.phase-row[data-clickable]:hover, .ms-row[data-clickable]:hover,
+.brow[data-clickable]:hover, .g-row[data-clickable]:hover { background: rgba(47,79,79,0.04); }
+
+/* Mobile: slide up from bottom */
+@media(max-width:768px){
+  .detail-panel {
+    top: auto; left: 0; right: 0; bottom: 0;
+    width: 100%; max-width: 100%;
+    max-height: 85vh;
+    border-left: none;
+    border-top: 1px solid rgba(184,115,51,0.15);
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.15);
+    transform: translateY(100%);
+  }
+  .detail-panel.open { transform: translateY(0); }
+  .detail-handle {
+    display: flex; justify-content: center; padding: 10px 0 4px;
+  }
+  .detail-handle-bar {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: rgba(184,115,51,0.25);
+  }
+  .detail-header { padding: 10px 16px 10px; }
+  .detail-title { font-size: 16px; }
+  .detail-body { padding: 14px 16px 20px; }
+}
+
+/* ═══════════════════════════════════════════════════
+   Gantt Task Manager — bottom panel
+   ═══════════════════════════════════════════════════ */
+
+.gantt-manager {
+  margin-top: 16px;
+  background: rgba(245,230,211,0.7);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(184,115,51,0.12);
+  border-radius: 16px;
+  padding: 18px;
+}
+.gantt-manager-title {
+  font-family: var(--f-head); font-size: 14px; font-weight: 700;
+  color: var(--forest); letter-spacing: 0.5px; margin-bottom: 14px;
+}
+
+.gantt-add-form {
+  display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+}
+.gantt-add-form .gf-group {
+  display: flex; flex-direction: column; gap: 4px;
+}
+.gantt-add-form .gf-label {
+  font-size: 9px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--bronze);
+}
+.gantt-add-form input, .gantt-add-form select {
+  padding: 8px 10px; border-radius: 8px; font-size: 12px;
+  border: 1px solid rgba(184,115,51,0.2);
+  background: rgba(255,255,255,0.6);
+  font-family: var(--f-body); color: var(--text);
+  outline: none; transition: border-color .2s;
+}
+.gantt-add-form input:focus, .gantt-add-form select:focus {
+  border-color: var(--forest);
+}
+
+/* Week chips */
+.week-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.week-chip {
+  padding: 4px 8px; border-radius: 6px; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+  border: 1px solid rgba(184,115,51,0.2);
+  background: rgba(255,255,255,0.5); color: var(--text-light);
+  transition: all .15s; user-select: none;
+}
+.week-chip.active {
+  background: var(--forest); color: #fff;
+  border-color: var(--forest);
+}
+.week-chip:hover:not(.active) { background: rgba(47,79,79,0.08); }
+
+/* Edit toggle button */
+.edit-toggle {
+  padding: 6px 14px; border-radius: 8px; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+  border: 1px solid rgba(184,115,51,0.25);
+  background: rgba(255,255,255,0.6); color: var(--forest);
+  font-family: var(--f-body); transition: all .2s;
+}
+.edit-toggle:hover { background: var(--forest); color: #fff; }
+.edit-toggle.active { background: var(--forest); color: #fff; }
+
+/* Add / Remove buttons in gantt */
+.gantt-add-btn {
+  padding: 8px 16px; border-radius: 8px; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+  border: none; background: var(--forest); color: #fff;
+  font-family: var(--f-body); transition: all .2s;
+}
+.gantt-add-btn:hover { opacity: 0.85; }
+
+.gantt-remove-btn {
+  width: 22px; height: 22px; border-radius: 50%; border: none;
+  background: rgba(200,50,50,0.1); color: #c83232;
+  font-size: 12px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; transition: all .2s;
+  flex-shrink: 0;
+}
+.gantt-remove-btn:hover { background: rgba(200,50,50,0.2); }
+
+@media(max-width:768px){
+  .gantt-manager { padding: 14px; }
+  .gantt-add-form { flex-direction: column; }
+  .gantt-add-form .gf-group { width: 100%; }
+  .gantt-add-form input, .gantt-add-form select { width: 100%; }
+}
