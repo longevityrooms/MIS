@@ -73,6 +73,11 @@ export default function RisksPage() {
               <div className="r-own">
                 Verantwortlich: {r.owner} · Auswirkung: {impactLabel(r.impact)} · Wahrscheinlichkeit: {probLabel(r.prob)}
               </div>
+              {r.mitigation && (
+                <div style={{ fontSize: '10px', color: 'var(--text-light)', marginTop: '4px', lineHeight: 1.5 }}>
+                  <span style={{ color: 'var(--forest)', fontWeight: 700, letterSpacing: '0.5px' }}>MINDERUNG:</span> {r.mitigation}
+                </div>
+              )}
             </div>
             <span className={`r-sb ${statusBadgeClass(r.status)}`}>{statusLabel(r.status)}</span>
           </div>

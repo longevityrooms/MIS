@@ -3,7 +3,7 @@
 import { PROJECT_BUDGET } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 
-const fmt$ = (v: number) => `$${(v / 1000).toFixed(0)}K`;
+const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : `€${(v / 1000).toFixed(0)}K`;
 
 const DripfyFooter = () => (
   <div style={{ textAlign: 'center', padding: '20px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
@@ -25,24 +25,24 @@ export default function BudgetPage() {
       <div className="grid4">
         <div className="stat">
           <div className="stat-lbl">Gesamtbudget</div>
-          <div className="stat-val">1,2 Mio. &euro;</div>
+          <div className="stat-val">{fmtEur(total)}</div>
           <div className="stat-sub">Genehmigt</div>
         </div>
         <div className="stat">
           <div className="stat-lbl">Ausgegeben</div>
-          <div className="stat-val">{fmt$(spent)}</div>
+          <div className="stat-val">{fmtEur(spent)}</div>
           <div className="stat-sub">{overallPercent}%</div>
           <div className="stat-chg up">Im Plan</div>
         </div>
         <div className="stat">
           <div className="stat-lbl">Gebunden</div>
-          <div className="stat-val">{fmt$(committed)}</div>
+          <div className="stat-val">{fmtEur(committed)}</div>
           <div className="stat-sub">In Bestellung</div>
           <div className="stat-chg warn">Beobachten</div>
         </div>
         <div className="stat">
           <div className="stat-lbl">Verf&uuml;gbar</div>
-          <div className="stat-val">{fmt$(available)}</div>
+          <div className="stat-val">{fmtEur(available)}</div>
           <div className="stat-sub">Verbleibend</div>
         </div>
       </div>
@@ -70,8 +70,8 @@ export default function BudgetPage() {
                 </div>
               </div>
               <div className="b-nums">
-                <div className="b-sp">{fmt$(cat.spent)}</div>
-                <div className="b-of">/ {fmt$(cat.budget)}</div>
+                <div className="b-sp">{fmtEur(cat.spent)}</div>
+                <div className="b-of">/ {fmtEur(cat.budget)}</div>
               </div>
             </div>
           );

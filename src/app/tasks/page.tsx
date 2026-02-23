@@ -32,7 +32,7 @@ export default function TasksPage() {
 
   const notStarted = tasks.filter(t => t.status === 'not_started').length;
   const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-  const blocked = tasks.filter(t => t.status === 'blocked').length;
+  const critical = tasks.filter(t => t.priority === 'critical').length;
   const done = tasks.filter(t => t.status === 'done').length;
 
   return (
@@ -46,7 +46,7 @@ export default function TasksPage() {
         {[
           { label: 'Nicht begonnen', val: notStarted },
           { label: 'In Bearbeitung', val: inProgress },
-          { label: 'Blockiert', val: blocked },
+          { label: 'Kritisch', val: critical },
           { label: 'Abgeschlossen', val: done },
         ].map((s) => (
           <div key={s.label} className="stat">

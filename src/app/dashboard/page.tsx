@@ -3,7 +3,7 @@
 import AppShell from '@/components/AppShell';
 import { PHASES, MILESTONES, PROJECT_TASKS, PROJECT_RISKS, PROJECT_BUDGET } from '@/lib/constants';
 
-const fmt$ = (v: number) => `$${(v / 1000).toFixed(0)}K`;
+const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : `€${(v / 1000).toFixed(0)}K`;
 
 export default function DashboardPage() {
   const totalSpent = PROJECT_BUDGET.spent;
@@ -77,15 +77,15 @@ export default function DashboardPage() {
         </div>
         <div className="stat">
           <div className="stat-lbl">Budget genutzt</div>
-          <div className="stat-val" style={{ color: 'var(--bronze)' }}>{fmt$(totalSpent)}</div>
-          <div className="stat-sub">von {fmt$(totalBudget)} gesamt</div>
+          <div className="stat-val" style={{ color: 'var(--bronze)' }}>{fmtEur(totalSpent)}</div>
+          <div className="stat-sub">von {fmtEur(totalBudget)} gesamt</div>
           <div className="stat-chg warn">{budgetPct}% ausgeschöpft</div>
         </div>
         <div className="stat">
           <div className="stat-lbl">Offene Aufgaben</div>
           <div className="stat-val">{openTasks}</div>
           <div className="stat-sub">von {PROJECT_TASKS.length} insgesamt</div>
-          <div className="stat-chg dn">2 blockiert</div>
+          <div className="stat-chg warn">{PROJECT_TASKS.filter(t => t.priority === 'critical').length} kritisch</div>
         </div>
         <div className="stat">
           <div className="stat-lbl">Aktive Risiken</div>
@@ -179,7 +179,7 @@ export default function DashboardPage() {
                   {item.label}
                 </div>
                 <div style={{ fontFamily: 'var(--f-head)', fontSize: 20, fontWeight: 600, color: item.color }}>
-                  {fmt$(item.value)}
+                  {fmtEur(item.value)}
                 </div>
               </div>
             ))}
@@ -195,8 +195,8 @@ export default function DashboardPage() {
               <div className="b-dot" style={{ background: c.color }} />
               <div className="b-name">{c.name}</div>
               <div className="b-nums">
-                <div className="b-sp">{fmt$(c.spent)}</div>
-                <div className="b-of">/ {fmt$(c.budget)}</div>
+                <div className="b-sp">{fmtEur(c.spent)}</div>
+                <div className="b-of">/ {fmtEur(c.budget)}</div>
               </div>
             </div>
           ))}
