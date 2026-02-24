@@ -1036,6 +1036,304 @@ select option {
 .log-meta { font-size: 10px; color: var(--text-light); margin-top: 2px; letter-spacing: 0.3px; }
 .log-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; white-space: nowrap; }
 
+/* ══ INTERACTIVE TASK LIST (TFL) ════════════════════════ */
+
+/* List header with search + sort */
+.tfl-list-header {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.tfl-controls {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.tfl-search-wrap {
+  position: relative; display: flex; align-items: center;
+}
+.tfl-search-icon {
+  position: absolute; left: 10px; font-size: 14px; color: var(--text-muted);
+  pointer-events: none;
+}
+.tfl-search {
+  padding: 7px 28px 7px 28px; border-radius: 10px;
+  border: 1px solid rgba(184,115,51,0.2);
+  background: rgba(255,255,255,0.5); font-size: 12px;
+  font-family: var(--f-body); color: var(--text);
+  outline: none; width: 170px; transition: all .2s;
+}
+.tfl-search:focus {
+  border-color: var(--forest); width: 220px;
+  box-shadow: 0 0 0 3px rgba(47,79,79,0.06);
+}
+.tfl-search-clear {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  border: none; background: rgba(47,79,79,0.1); color: var(--text-light);
+  width: 18px; height: 18px; border-radius: 50%; font-size: 10px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.tfl-search-clear:hover { background: rgba(47,79,79,0.2); }
+
+.tfl-sort-pills { display: flex; gap: 4px; }
+.tfl-sort-pill {
+  padding: 5px 10px; border-radius: 8px; font-size: 10px;
+  font-weight: 700; letter-spacing: 0.5px; cursor: pointer;
+  border: 1px solid rgba(184,115,51,0.18);
+  background: rgba(255,255,255,0.4); color: var(--text-light);
+  font-family: var(--f-body); transition: all .15s;
+}
+.tfl-sort-pill.active {
+  background: var(--forest); color: #fff;
+  border-color: var(--forest);
+}
+.tfl-sort-pill:hover:not(.active) { background: rgba(47,79,79,0.06); }
+
+/* Phase group in main list */
+.tfl-main-phase {
+  margin-bottom: 4px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(184,115,51,0.06);
+  transition: box-shadow .2s;
+}
+.tfl-main-phase:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.tfl-main-phase-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; cursor: pointer;
+  background: rgba(245,230,211,0.5);
+  border-bottom: 1px solid rgba(184,115,51,0.06);
+  transition: background .15s; user-select: none;
+}
+.tfl-main-phase-header:hover {
+  background: rgba(245,230,211,0.75);
+}
+.tfl-main-phase-left {
+  display: flex; align-items: center; gap: 8px;
+}
+.tfl-chevron {
+  font-size: 14px; font-weight: 700; color: var(--text-light);
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+  width: 16px; text-align: center;
+}
+.tfl-chevron.open { transform: rotate(90deg); }
+.tfl-main-phase-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--phase-color, var(--forest));
+  flex-shrink: 0;
+}
+.tfl-main-phase-info {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.tfl-main-phase-label {
+  font-size: 11px; font-weight: 700; color: var(--forest);
+  letter-spacing: 0.5px; font-family: var(--f-body);
+}
+.tfl-main-phase-name {
+  font-size: 10px; color: var(--text-light);
+  font-family: var(--f-body); letter-spacing: 0.3px;
+}
+.tfl-main-phase-right {
+  display: flex; align-items: center; gap: 8px;
+}
+.tfl-main-phase-stats {
+  font-size: 10px; font-weight: 700; color: var(--text-light);
+  letter-spacing: 0.3px;
+}
+.tfl-main-phase-progress {
+  width: 50px; height: 4px; border-radius: 2px;
+  background: rgba(47,79,79,0.08); overflow: hidden;
+}
+.tfl-main-phase-progress-fill {
+  height: 100%; border-radius: 2px;
+  transition: width .4s ease;
+}
+.tfl-main-phase-pct {
+  font-size: 10px; font-weight: 700; color: var(--text-light);
+  width: 30px; text-align: right;
+}
+
+/* Task rows inside phase group */
+.tfl-main-tasks {
+  animation: tfl-expand .25s ease;
+}
+@keyframes tfl-expand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.tfl-main-task {
+  padding: 10px 14px 10px 38px !important;
+  border-bottom: 1px solid rgba(184,115,51,0.05) !important;
+  transition: all .15s !important;
+  margin: 0 !important; border-radius: 0 !important;
+}
+.tfl-main-task:last-child { border-bottom: none !important; }
+.tfl-main-task:hover {
+  background: rgba(184,115,51,0.04) !important;
+  padding-left: 42px !important;
+}
+.tfl-main-task-row1 {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.tfl-main-task-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  flex: 1; min-width: 0; line-height: 1.4;
+}
+.tfl-main-task-badges {
+  display: flex; gap: 5px; flex-shrink: 0; align-items: center;
+}
+.tfl-main-task-row2 {
+  display: flex; gap: 8px; align-items: center; margin-top: 3px;
+}
+.tfl-main-task-meta {
+  font-size: 10px; color: var(--text-light); letter-spacing: 0.3px;
+}
+.tfl-main-task-owner {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 2px 6px; border-radius: 4px;
+  background: rgba(47,79,79,0.08); color: var(--forest);
+}
+.tfl-main-task-row3 {
+  display: flex; align-items: center; gap: 8px; margin-top: 5px;
+}
+.tfl-main-task-pct {
+  font-size: 10px; color: var(--text-light); font-weight: 600;
+  width: 30px; text-align: right; flex-shrink: 0;
+}
+
+/* ── Filtered modal task list ─────────────────── */
+.tfl-summary {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; border-radius: 10px;
+  background: rgba(47,79,79,0.05); margin-bottom: 14px;
+}
+.tfl-summary-count {
+  font-size: 11px; font-weight: 700; color: var(--forest);
+  letter-spacing: 0.5px;
+}
+.tfl-summary-progress {
+  font-size: 10px; color: var(--text-light); letter-spacing: 0.3px;
+}
+.tfl-empty {
+  font-size: 13px; color: var(--text-muted); text-align: center;
+  padding: 24px 0; font-style: italic;
+}
+
+/* Phase group in filtered modal */
+.tfl-phase-group {
+  margin-bottom: 12px;
+}
+.tfl-phase-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 0 6px; border-bottom: 1px solid rgba(184,115,51,0.1);
+  margin-bottom: 4px;
+}
+.tfl-phase-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--phase-color, var(--forest)); flex-shrink: 0;
+}
+.tfl-phase-info {
+  display: flex; gap: 6px; align-items: baseline; flex: 1;
+}
+.tfl-phase-name {
+  font-size: 11px; font-weight: 700; color: var(--forest);
+  letter-spacing: 0.5px;
+}
+.tfl-phase-desc {
+  font-size: 10px; color: var(--text-light);
+}
+.tfl-phase-count {
+  font-size: 10px; font-weight: 700; color: var(--text-muted);
+  background: rgba(47,79,79,0.06); padding: 2px 7px;
+  border-radius: 6px;
+}
+
+/* Task row in filtered modal */
+.tfl-task-row {
+  padding: 10px 12px; border-radius: 10px; cursor: pointer;
+  margin-bottom: 3px; position: relative;
+  transition: all .15s;
+  background: rgba(255,255,255,0.25);
+  border: 1px solid transparent;
+}
+.tfl-task-row:hover {
+  background: rgba(255,255,255,0.55);
+  border-color: rgba(184,115,51,0.12);
+  transform: translateX(4px);
+}
+.tfl-task-row:active { transform: translateX(2px) scale(0.995); }
+
+.tfl-task-main {
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;
+}
+.tfl-task-title {
+  font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4;
+  flex: 1; min-width: 0;
+}
+.tfl-task-meta {
+  display: flex; gap: 4px; margin-top: 3px;
+  font-size: 10px; color: var(--text-light); letter-spacing: 0.2px;
+}
+.tfl-task-progress {
+  display: flex; align-items: center; gap: 6px; margin-top: 5px;
+}
+.tfl-task-progress-bar {
+  flex: 1; height: 3px; border-radius: 2px;
+  background: rgba(47,79,79,0.08); overflow: hidden;
+}
+.tfl-task-progress-fill {
+  height: 100%; border-radius: 2px;
+  background: var(--forest);
+  transition: width .3s;
+}
+.tfl-task-progress-text {
+  font-size: 10px; font-weight: 600; color: var(--text-light);
+  width: 28px; text-align: right;
+}
+.tfl-task-arrow {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  font-size: 16px; font-weight: 300; color: rgba(184,115,51,0.3);
+  transition: all .15s;
+}
+.tfl-task-row:hover .tfl-task-arrow {
+  color: var(--bronze); right: 8px;
+}
+
+/* Back button in detail view */
+.tfl-back-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 6px 14px; border-radius: 8px; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.3px; cursor: pointer;
+  border: 1px solid rgba(47,79,79,0.15);
+  background: rgba(47,79,79,0.05); color: var(--forest);
+  font-family: var(--f-body); transition: all .2s;
+  margin-bottom: 14px;
+}
+.tfl-back-btn:hover {
+  background: rgba(47,79,79,0.1);
+  transform: translateX(-2px);
+}
+
+/* ── Responsive ─────────────────── */
+@media (max-width: 768px) {
+  .tfl-list-header { flex-direction: column; align-items: flex-start; }
+  .tfl-controls { width: 100%; }
+  .tfl-search { width: 100%; }
+  .tfl-search:focus { width: 100%; }
+  .tfl-search-wrap { flex: 1; }
+  .tfl-sort-pills { width: 100%; justify-content: flex-start; }
+  .tfl-main-task { padding-left: 22px !important; }
+  .tfl-main-task:hover { padding-left: 24px !important; }
+  .tfl-main-phase-progress { width: 36px; }
+  .tfl-main-task-badges { flex-wrap: wrap; }
+  .tfl-task-row:hover { transform: none; }
+  .tfl-main-phase-name { display: none; }
+}
+@media (max-width: 480px) {
+  .tfl-main-task-row1 { flex-wrap: wrap; }
+  .tfl-main-task-badges { width: 100%; margin-top: 4px; }
+}
+
 /* ══ ONBOARDING TOUR ════════════════════════════════════ */
 .onboarding-overlay {
   position: fixed; inset: 0; z-index: 9999;
