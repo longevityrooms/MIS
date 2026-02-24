@@ -8,6 +8,8 @@ import Header from './Header';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import ChatWidget from './ChatWidget';
+import { DataProvider } from '@/lib/DataContext';
+import OnboardingTour from './OnboardingTour';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -90,8 +92,10 @@ export default function AppShell({ children }: AppShellProps) {
 
   if (!profile) return null;
 
+  const currentUser = { id: profile.id, name: profile.name, role: profile.role };
+
   return (
-    <>
+    <DataProvider user={currentUser}>
       {/* Fixed background */}
       <div id="bg" />
 
@@ -166,7 +170,10 @@ export default function AppShell({ children }: AppShellProps) {
             </div>
           </div>
         </div>
+
+        {/* Onboarding Tour */}
+        <OnboardingTour />
       </div>
-    </>
+    </DataProvider>
   );
 }

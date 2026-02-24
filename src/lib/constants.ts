@@ -24,10 +24,11 @@ export const NAV_ITEMS = [
   { href: '/budget',          label: 'Budget',           icon: '◈',  iconName: 'PieChart' },
   { href: '/announcements',   label: 'Ankündigungen',    icon: '◆',  iconName: 'Megaphone' },
   { href: '/documents',       label: 'Dokumente',        icon: '❑',  iconName: 'FileText' },
+  { href: '/activity-log',    label: 'Aktivitätslog',    icon: '▤',  iconName: 'ClipboardList' },
 ];
 
 export const ROLE_NAV_ACCESS: Record<Role, string[]> = {
-  PM: ['/dashboard', '/projektzeitplan', '/tasks', '/risks', '/budget', '/announcements', '/documents'],
+  PM: ['/dashboard', '/projektzeitplan', '/tasks', '/risks', '/budget', '/announcements', '/documents', '/activity-log'],
   MD: ['/dashboard', '/projektzeitplan', '/tasks', '/risks', '/announcements', '/documents'],
   Investor: ['/dashboard', '/tasks', '/risks', '/budget', '/announcements', '/documents'],
   Contractor: ['/dashboard', '/projektzeitplan', '/tasks', '/announcements', '/documents'],

@@ -1,98 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { PROJECT_BUDGET } from '@/lib/constants';
 import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
+import { useData, BudgetCat } from '@/lib/DataContext';
 
-const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : `€${(v / 1000).toFixed(0)}K`;
+const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `€${(v / 1000).toFixed(0)}K` : `€${v}`;
 
-const DripfyFooter = () => (
-  <div style={{ textAlign: 'center', padding: '20px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,transparent,rgba(184,115,51,0.2))' }} />
-    <span style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--text-muted)', fontFamily: 'var(--f-body)', whiteSpace: 'nowrap' }}>
-      Powered by <a href="https://dripfy.app" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--bronze)', textDecoration: 'none' }}>DRIPFY.APP</a>
-    </span>
-    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,rgba(184,115,51,0.2),transparent)' }} />
-  </div>
-);
+const COLORS = ['#2F4F4F', '#B87333', '#4d7c7c', '#c0392b', '#8b6914', '#5a8080', '#a0522d', '#4d6c6c', '#c49a6c', '#6b8e8e'];
 
 type ModalContent = { title: string; body: React.ReactNode } | null;
 
+const EMPTY_CAT: BudgetCat = { name: '', budget: 0, spent: 0, color: '#2F4F4F' };
+
 export default function BudgetPage() {
+  return <AppShell><BudgetContent /></AppShell>;
+}
+
+function BudgetContent() {
+  const { budget, updateBudgetTotals, addBudgetCategory, updateBudgetCategory, deleteBudgetCategory, currentUser } = useData();
   const [modal, setModal] = useState<ModalContent>(null);
-  const { total, spent, committed, cats } = PROJECT_BUDGET;
+  const [showForm, setShowForm] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const [form, setForm] = useState<BudgetCat>({ ...EMPTY_CAT });
+  const [showTotalEdit, setShowTotalEdit] = useState(false);
+  const [totalForm, setTotalForm] = useState({ total: budget.total, spent: budget.spent, committed: budget.committed });
+
+  const isPM = currentUser?.role?.toUpperCase() === 'PM';
+  const { total, spent, committed, cats } = budget;
   const available = total - spent - committed;
-  const overallPercent = Math.round((spent / total) * 100);
+  const overallPercent = total > 0 ? Math.round((spent / total) * 100) : 0;
 
-  const openBudgetTotal = () => setModal({
-    title: 'Gesamtbudget',
-    body: (
-      <>
-        <div className="detail-field"><span className="detail-label">Genehmigt</span><span className="detail-value">{fmtEur(total)}</span></div>
-        <div className="detail-field"><span className="detail-label">Ausgegeben</span><span className="detail-value">{fmtEur(spent)}</span></div>
-        <div className="detail-field"><span className="detail-label">Gebunden</span><span className="detail-value">{fmtEur(committed)}</span></div>
-        <div className="detail-field"><span className="detail-label">Verfügbar</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{fmtEur(available)}</span></div>
-        <div className="detail-section">
-          <div className="detail-section-title">Alle Kategorien</div>
-          {cats.map((c, i) => {
-            const pct = c.budget > 0 ? Math.round((c.spent / c.budget) * 100) : 0;
-            return (
-              <div key={i} className="detail-field">
-                <span className="detail-label" style={{ color: c.color }}>{c.name}</span>
-                <span className="detail-value">{fmtEur(c.spent)} / {fmtEur(c.budget)} ({pct}%)</span>
-              </div>
-            );
-          })}
-        </div>
-      </>
-    ),
-  });
+  const startAddCat = () => { setForm({ ...EMPTY_CAT, color: COLORS[cats.length % COLORS.length] }); setEditIdx(null); setShowForm(true); };
+  const startEditCat = (i: number) => { setForm({ ...cats[i] }); setEditIdx(i); setShowForm(true); setModal(null); };
+  const handleSave = () => {
+    if (!form.name.trim()) return;
+    if (editIdx !== null) updateBudgetCategory(editIdx, form);
+    else addBudgetCategory(form);
+    setShowForm(false); setEditIdx(null);
+  };
+  const handleDeleteCat = (i: number) => { deleteBudgetCategory(i); setModal(null); };
 
-  const openSpent = () => setModal({
-    title: 'Ausgegeben',
-    body: (
-      <>
-        <div className="detail-field"><span className="detail-label">Betrag</span><span className="detail-value">{fmtEur(spent)}</span></div>
-        <div className="detail-field"><span className="detail-label">Anteil</span><span className="detail-value">{overallPercent}%</span></div>
-        <div className="detail-field"><span className="detail-label">Status</span><span className="detail-value" style={{ color: 'var(--forest)' }}>Im Plan</span></div>
-        <div className="detail-section">
-          <div className="detail-section-title">Ausgaben nach Kategorie</div>
-          {cats.filter(c => c.spent > 0).map((c, i) => (
-            <div key={i} className="detail-field">
-              <span className="detail-label" style={{ color: c.color }}>{c.name}</span>
-              <span className="detail-value">{fmtEur(c.spent)}</span>
-            </div>
-          ))}
-        </div>
-      </>
-    ),
-  });
+  const handleSaveTotals = () => {
+    updateBudgetTotals(totalForm);
+    setShowTotalEdit(false);
+  };
 
-  const openCommitted = () => setModal({
-    title: 'Gebundene Mittel',
-    body: (
-      <>
-        <div className="detail-field"><span className="detail-label">Betrag</span><span className="detail-value">{fmtEur(committed)}</span></div>
-        <div className="detail-field"><span className="detail-label">Status</span><span className="detail-value" style={{ color: 'var(--bronze)' }}>In Bestellung</span></div>
-        <div className="detail-field"><span className="detail-label">Hinweis</span><span className="detail-value">Bestellte Geräte & Dienstleistungen, noch nicht geliefert/abgerechnet</span></div>
-      </>
-    ),
-  });
-
-  const openAvailable = () => setModal({
-    title: 'Verfügbares Budget',
-    body: (
-      <>
-        <div className="detail-field"><span className="detail-label">Verfügbar</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{fmtEur(available)}</span></div>
-        <div className="detail-field"><span className="detail-label">Gesamtbudget</span><span className="detail-value">{fmtEur(total)}</span></div>
-        <div className="detail-field"><span className="detail-label">Bereits gebunden</span><span className="detail-value">{fmtEur(spent + committed)}</span></div>
-        <div className="detail-field"><span className="detail-label">Reserve</span><span className="detail-value">{Math.round((available / total) * 100)}% des Budgets</span></div>
-      </>
-    ),
-  });
-
-  const openCat = (cat: typeof cats[0]) => {
+  const openCat = (cat: BudgetCat, i: number) => {
     const catPercent = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
     setModal({
       title: cat.name,
@@ -102,77 +56,107 @@ export default function BudgetPage() {
           <div className="detail-field"><span className="detail-label">Ausgegeben</span><span className="detail-value">{fmtEur(cat.spent)}</span></div>
           <div className="detail-field"><span className="detail-label">Verbrauch</span><span className="detail-value">{catPercent}%</span></div>
           <div className="detail-field"><span className="detail-label">Verbleibend</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{fmtEur(cat.budget - cat.spent)}</span></div>
-          <div className="pb" style={{ height: 8, margin: '12px 0' }}>
-            <div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: 8 }} />
-          </div>
+          <div className="pb" style={{ height: 8, margin: '12px 0' }}><div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: 8 }} /></div>
+          {isPM && (
+            <div className="crud-actions" style={{ marginTop: 16 }}>
+              <button className="crud-btn crud-btn-edit" onClick={() => startEditCat(i)}>✎ Bearbeiten</button>
+              <button className="crud-btn crud-btn-delete" onClick={() => handleDeleteCat(i)}>✕ Löschen</button>
+            </div>
+          )}
         </>
       ),
     });
   };
 
   return (
-    <AppShell>
-      <div className="grid4">
-        <div className="stat" data-clickable onClick={openBudgetTotal}>
-          <div className="stat-lbl">Gesamtbudget</div>
-          <div className="stat-val">{fmtEur(total)}</div>
-          <div className="stat-sub">Genehmigt</div>
-        </div>
-        <div className="stat" data-clickable onClick={openSpent}>
-          <div className="stat-lbl">Ausgegeben</div>
-          <div className="stat-val">{fmtEur(spent)}</div>
-          <div className="stat-sub">{overallPercent}%</div>
-          <div className="stat-chg up">Im Plan</div>
-        </div>
-        <div className="stat" data-clickable onClick={openCommitted}>
-          <div className="stat-lbl">Gebunden</div>
-          <div className="stat-val">{fmtEur(committed)}</div>
-          <div className="stat-sub">In Bestellung</div>
-          <div className="stat-chg warn">Beobachten</div>
-        </div>
-        <div className="stat" data-clickable onClick={openAvailable}>
-          <div className="stat-lbl">Verfügbar</div>
-          <div className="stat-val">{fmtEur(available)}</div>
-          <div className="stat-sub">Verbleibend</div>
+    <>
+      <div className="sec-hdr">
+        <div className="sec-title">Budgetübersicht</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {isPM && <button className="crud-btn crud-btn-primary" onClick={startAddCat}>+ Kategorie</button>}
+          {isPM && <button className="crud-btn crud-btn-edit" onClick={() => { setTotalForm({ total, spent, committed }); setShowTotalEdit(true); }}>✎ Gesamt</button>}
+          <div className="ornament">◆ ◆ ◆</div>
         </div>
       </div>
 
-      <div className="glass-card">
-        <div className="card-title">Budget nach Kategorie</div>
+      <div className="grid4">
+        <div className="stat"><div className="stat-lbl">Gesamtbudget</div><div className="stat-val">{fmtEur(total)}</div><div className="stat-sub">Genehmigt</div></div>
+        <div className="stat"><div className="stat-lbl">Ausgegeben</div><div className="stat-val">{fmtEur(spent)}</div><div className="stat-sub">{overallPercent}%</div><div className="stat-chg up">Im Plan</div></div>
+        <div className="stat"><div className="stat-lbl">Gebunden</div><div className="stat-val">{fmtEur(committed)}</div><div className="stat-sub">In Bestellung</div></div>
+        <div className="stat"><div className="stat-lbl">Verfügbar</div><div className="stat-val">{fmtEur(available)}</div><div className="stat-sub">Verbleibend</div></div>
+      </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-light)', marginBottom: '6px' }}>
-          <span>Gesamtverbrauch</span>
-          <span>{overallPercent}%</span>
+      {/* Edit Totals Form */}
+      {showTotalEdit && isPM && (
+        <div className="glass-card" style={{ marginTop: 16 }}>
+          <div className="card-title">Gesamtbudget bearbeiten</div>
+          <div className="crud-form">
+            <div className="crud-form-row">
+              <div><label>Gesamtbudget (€)</label><input type="number" value={totalForm.total} onChange={e => setTotalForm(f => ({ ...f, total: +e.target.value }))} /></div>
+              <div><label>Ausgegeben (€)</label><input type="number" value={totalForm.spent} onChange={e => setTotalForm(f => ({ ...f, spent: +e.target.value }))} /></div>
+              <div><label>Gebunden (€)</label><input type="number" value={totalForm.committed} onChange={e => setTotalForm(f => ({ ...f, committed: +e.target.value }))} /></div>
+            </div>
+            <div className="crud-actions">
+              <button className="crud-btn crud-btn-cancel" onClick={() => setShowTotalEdit(false)}>Abbrechen</button>
+              <button className="crud-btn crud-btn-save" onClick={handleSaveTotals}>✓ Speichern</button>
+            </div>
+          </div>
         </div>
-        <div className="pb">
-          <div className="pb-fill" style={{ width: `${overallPercent}%` }} />
-        </div>
+      )}
 
-        {cats.map((cat) => {
+      {/* Add/Edit Category Form */}
+      {showForm && isPM && (
+        <div className="glass-card" style={{ marginTop: 16 }}>
+          <div className="card-title">{editIdx !== null ? 'Kategorie bearbeiten' : 'Neue Kategorie'}</div>
+          <div className="crud-form">
+            <div><label>Name</label><input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Kategoriename..." /></div>
+            <div className="crud-form-row">
+              <div><label>Budget (€)</label><input type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: +e.target.value }))} /></div>
+              <div><label>Ausgegeben (€)</label><input type="number" value={form.spent} onChange={e => setForm(f => ({ ...f, spent: +e.target.value }))} /></div>
+            </div>
+            <div><label>Farbe</label>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {COLORS.map(c => (
+                  <div key={c} onClick={() => setForm(f => ({ ...f, color: c }))} style={{
+                    width: 28, height: 28, borderRadius: '50%', background: c, cursor: 'pointer',
+                    border: form.color === c ? '3px solid var(--text-dark)' : '2px solid transparent',
+                    transition: 'border 0.15s',
+                  }} />
+                ))}
+              </div>
+            </div>
+            <div className="crud-actions">
+              <button className="crud-btn crud-btn-cancel" onClick={() => { setShowForm(false); setEditIdx(null); }}>Abbrechen</button>
+              <button className="crud-btn crud-btn-save" onClick={handleSave}>✓ Speichern</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="glass-card" style={{ marginTop: 16 }}>
+        <div className="card-title">Budget nach Kategorie — {cats.length} Kategorien</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-light)', marginBottom: 6 }}>
+          <span>Gesamtverbrauch</span><span>{overallPercent}%</span>
+        </div>
+        <div className="pb" style={{ height: 6 }}><div className="pb-fill" style={{ width: `${overallPercent}%`, height: 6 }} /></div>
+
+        {cats.map((cat, i) => {
           const catPercent = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
           return (
-            <div key={cat.name} className="brow" data-clickable onClick={() => openCat(cat)}>
+            <div key={i} className="brow" data-clickable onClick={() => openCat(cat, i)}>
               <div className="b-dot" style={{ background: cat.color }} />
               <div className="b-name">{cat.name}</div>
-              <div style={{ flex: 1, padding: '0 16px', minWidth: '80px' }}>
-                <div className="pb" style={{ height: '4px' }}>
-                  <div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: '4px' }} />
-                </div>
+              <div style={{ flex: 1, padding: '0 16px', minWidth: 80 }}>
+                <div className="pb" style={{ height: 4 }}><div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: 4 }} /></div>
               </div>
-              <div className="b-nums">
-                <div className="b-sp">{fmtEur(cat.spent)}</div>
-                <div className="b-of">/ {fmtEur(cat.budget)}</div>
-              </div>
+              <div className="b-nums"><div className="b-sp">{fmtEur(cat.spent)}</div><div className="b-of">/ {fmtEur(cat.budget)}</div></div>
             </div>
           );
         })}
       </div>
 
-      <DripfyFooter />
-
-      <DetailModal open={!!modal} onClose={() => setModal(null)} title={modal?.title || ''}>
-        {modal?.body}
-      </DetailModal>
-    </AppShell>
+      <div className="dripfy-footer" style={{ marginTop: 16 }}>Powered by <a href="https://dripfy.app" target="_blank" rel="noopener noreferrer">DRIPFY.APP</a></div>
+      <DetailModal open={!!modal} onClose={() => setModal(null)} title={modal?.title || ''}>{modal?.body}</DetailModal>
+    </>
   );
 }
