@@ -4,7 +4,7 @@ import { useState } from 'react';
 import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
 import GanttTaskManager from '@/components/GanttTaskManager';
-import { GANTT_DATA } from '@/lib/constants';
+import { GANTT_DATA, GANTT_ASSIGNEES } from '@/lib/constants';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   done:    { label: 'Abgeschlossen', color: '#2F4F4F', bg: 'rgba(47,79,79,0.12)' },
@@ -29,6 +29,8 @@ type GanttTask = {
   active: number[];
   status: 'done' | 'active' | 'pending';
   link: string;
+  assignee?: string;
+  description?: string;
 };
 
 type GanttPhase = {
@@ -37,6 +39,36 @@ type GanttPhase = {
   link: string;
   tasks: GanttTask[];
 };
+
+function getAssigneeInfo(id?: string) {
+  if (!id) return null;
+  return GANTT_ASSIGNEES.find(a => a.id === id) || null;
+}
+
+function AssigneeBadge({ id, size = 'sm' }: { id?: string; size?: 'sm' | 'md' }) {
+  const info = getAssigneeInfo(id);
+  if (!info) return null;
+  const isMd = size === 'md';
+  return (
+    <span
+      title={`${info.name} (${info.role})`}
+      style={{
+        fontSize: isMd ? '10px' : '9px',
+        fontWeight: 700,
+        padding: isMd ? '2px 7px' : '1px 5px',
+        borderRadius: '4px',
+        letterSpacing: '0.5px',
+        background: `${info.color}15`,
+        color: info.color,
+        border: `1px solid ${info.color}30`,
+        whiteSpace: 'nowrap',
+        fontFamily: 'var(--f-body)',
+      }}
+    >
+      {info.id}
+    </span>
+  );
+}
 
 export default function ProjektzeitplanPage() {
   const weeks = Array.from({ length: 18 }, (_, i) => i + 1);
@@ -77,15 +109,28 @@ export default function ProjektzeitplanPage() {
           <div className="detail-field"><span className="detail-label">Ausstehend</span><span className="detail-value">{pendingCount}</span></div>
           <div className="detail-section">
             <div className="detail-section-title">Aufgaben</div>
-            {phase.tasks.map((t, i) => (
-              <div key={i} style={{ padding: '6px 0', borderBottom: '1px solid rgba(184,115,51,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 7, height: 7, borderRadius: '50%', background: STATUS_LABELS[t.status]?.color || '#888' }} />
-                  <span style={{ fontSize: 12, color: 'var(--text)' }}>{t.name}</span>
+            {phase.tasks.map((t, i) => {
+              const assigneeInfo = getAssigneeInfo(t.assignee);
+              return (
+                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(184,115,51,0.06)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: STATUS_LABELS[t.status]?.color || '#888', flexShrink: 0 }} />
+                      <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{t.name}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      {assigneeInfo && <AssigneeBadge id={t.assignee} />}
+                      <span style={{ fontSize: 10, color: 'var(--text-light)' }}>W{t.active[0]}–W{t.active[t.active.length - 1]}</span>
+                    </div>
+                  </div>
+                  {t.description && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: 13, lineHeight: '1.4' }}>
+                      {t.description.length > 80 ? t.description.substring(0, 80) + '…' : t.description}
+                    </div>
+                  )}
                 </div>
-                <span style={{ fontSize: 10, color: 'var(--text-light)' }}>W{t.active[0]}–W{t.active[t.active.length - 1]}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </>
       ),
@@ -94,18 +139,59 @@ export default function ProjektzeitplanPage() {
 
   const openTaskDetail = (task: GanttTask, phase: GanttPhase) => {
     const statusInfo = STATUS_LABELS[task.status];
+    const assigneeInfo = getAssigneeInfo(task.assignee);
     setModal({
       title: task.name,
       body: (
         <>
           <div className="detail-field"><span className="detail-label">Phase</span><span className="detail-value" style={{ color: phase.color }}>{phase.label}</span></div>
           <div className="detail-field"><span className="detail-label">Status</span>
-            <span className="detail-value" style={{ color: statusInfo?.color }}>
-              {statusInfo?.label}
+            <span className="detail-value">
+              <span style={{
+                display: 'inline-block', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 600,
+                background: statusInfo?.bg, color: statusInfo?.color,
+              }}>
+                {statusInfo?.label}
+              </span>
             </span>
           </div>
+          {assigneeInfo && (
+            <div className="detail-field">
+              <span className="detail-label">Verantwortlich</span>
+              <span className="detail-value">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: `${assigneeInfo.color}18`, color: assigneeInfo.color, fontSize: '10px', fontWeight: 700,
+                    border: `1.5px solid ${assigneeInfo.color}40`, fontFamily: 'var(--f-body)',
+                  }}>
+                    {assigneeInfo.id}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>{assigneeInfo.name}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{assigneeInfo.role}</div>
+                  </div>
+                </div>
+              </span>
+            </div>
+          )}
           <div className="detail-field"><span className="detail-label">Zeitraum</span><span className="detail-value">W{task.active[0]} – W{task.active[task.active.length - 1]}</span></div>
           <div className="detail-field"><span className="detail-label">Dauer</span><span className="detail-value">{task.active.length} Woche{task.active.length > 1 ? 'n' : ''}</span></div>
+
+          {/* Description Section */}
+          {task.description && (
+            <div className="detail-section">
+              <div className="detail-section-title">Beschreibung</div>
+              <div style={{
+                fontSize: '12px', lineHeight: '1.6', color: 'var(--text)',
+                padding: '10px 12px', borderRadius: '8px',
+                background: 'rgba(245,230,211,0.3)', border: '1px solid rgba(184,115,51,0.08)',
+              }}>
+                {task.description}
+              </div>
+            </div>
+          )}
+
           <div className="detail-section">
             <div className="detail-section-title">Aktive Wochen</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -274,7 +360,7 @@ function TaskRow({ task, phase, weeks, currentWeek, editMode, onTaskClick, onRem
         }}
         title={`${task.name} → ${statusInfo.label}`}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {editMode && (
             <button
               className="gantt-remove-btn"
@@ -290,6 +376,9 @@ function TaskRow({ task, phase, weeks, currentWeek, editMode, onTaskClick, onRem
             boxShadow: task.status === 'active' ? `0 0 6px ${statusInfo.color}50` : 'none',
           }} />
           <span>{task.name}</span>
+          {task.assignee && (
+            <AssigneeBadge id={task.assignee} />
+          )}
           {isRowHovered && !editMode && (
             <span style={{ fontSize: '10px', color: 'var(--bronze)', marginLeft: 'auto', whiteSpace: 'nowrap', opacity: 0.7 }}>→</span>
           )}

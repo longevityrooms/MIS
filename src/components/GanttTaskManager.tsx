@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { GANTT_ASSIGNEES } from '@/lib/constants';
 
 interface GanttTask {
   name: string;
   active: number[];
   status: 'done' | 'active' | 'pending';
   link: string;
+  assignee?: string;
+  description?: string;
 }
 
 interface GanttPhase {
@@ -36,6 +39,8 @@ export default function GanttTaskManager({ ganttData, onAddTask, onRemoveTask }:
   const [startWeek, setStartWeek] = useState(1);
   const [endWeek, setEndWeek] = useState(2);
   const [status, setStatus] = useState<'done' | 'active' | 'pending'>('pending');
+  const [assignee, setAssignee] = useState('AH');
+  const [description, setDescription] = useState('');
 
   const handleAdd = () => {
     if (!taskName.trim()) return;
@@ -47,9 +52,17 @@ export default function GanttTaskManager({ ganttData, onAddTask, onRemoveTask }:
       active,
       status,
       link: '/tasks',
+      assignee,
+      description: description.trim() || undefined,
     });
 
     setTaskName('');
+    setDescription('');
+  };
+
+  const getAssigneeName = (id: string) => {
+    const a = GANTT_ASSIGNEES.find(x => x.id === id);
+    return a ? a.id : id;
   };
 
   return (
@@ -73,6 +86,15 @@ export default function GanttTaskManager({ ganttData, onAddTask, onRemoveTask }:
           <select value={phase} onChange={e => setPhase(Number(e.target.value))}>
             {ganttData.map((_, i) => (
               <option key={i} value={i}>{PHASE_NAMES[i] || `Phase ${i + 1}`}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="gf-group" style={{ minWidth: '100px' }}>
+          <label className="gf-label">Verantwortlich</label>
+          <select value={assignee} onChange={e => setAssignee(e.target.value)}>
+            {GANTT_ASSIGNEES.map(a => (
+              <option key={a.id} value={a.id}>{a.id} — {a.name}</option>
             ))}
           </select>
         </div>
@@ -107,8 +129,35 @@ export default function GanttTaskManager({ ganttData, onAddTask, onRemoveTask }:
             <option value="done">Abgeschlossen</option>
           </select>
         </div>
+      </div>
 
-        <button className="gantt-add-btn" onClick={handleAdd} style={{ alignSelf: 'flex-end' }}>
+      {/* Description textarea */}
+      <div style={{ marginTop: '8px' }}>
+        <div className="gf-group" style={{ width: '100%' }}>
+          <label className="gf-label">Beschreibung</label>
+          <textarea
+            placeholder="Detaillierte Aufgabenbeschreibung eingeben..."
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={2}
+            style={{
+              width: '100%',
+              padding: '8px 10px',
+              borderRadius: '6px',
+              border: '1px solid rgba(184,115,51,0.2)',
+              background: 'rgba(245,230,211,0.3)',
+              fontFamily: 'var(--f-body)',
+              fontSize: '12px',
+              color: 'var(--text)',
+              resize: 'vertical',
+              outline: 'none',
+            }}
+          />
+        </div>
+      </div>
+
+      <div style={{ marginTop: '8px', display: 'flex', justifyContent: 'flex-end' }}>
+        <button className="gantt-add-btn" onClick={handleAdd}>
           + Hinzufügen
         </button>
       </div>
@@ -133,6 +182,17 @@ export default function GanttTaskManager({ ganttData, onAddTask, onRemoveTask }:
                   onClick={() => onRemoveTask(pi, ti)}
                   title="Aufgabe entfernen"
                 >✕</button>
+                {t.assignee && (
+                  <span style={{
+                    fontSize: '9px', fontWeight: 700, padding: '1px 5px',
+                    borderRadius: '3px', letterSpacing: '0.5px',
+                    background: GANTT_ASSIGNEES.find(a => a.id === t.assignee)?.color ? `${GANTT_ASSIGNEES.find(a => a.id === t.assignee)!.color}18` : 'rgba(47,79,79,0.08)',
+                    color: GANTT_ASSIGNEES.find(a => a.id === t.assignee)?.color || 'var(--text-muted)',
+                    border: `1px solid ${GANTT_ASSIGNEES.find(a => a.id === t.assignee)?.color || '#ccc'}30`,
+                  }}>
+                    {getAssigneeName(t.assignee)}
+                  </span>
+                )}
                 <span style={{ flex: 1 }}>{t.name}</span>
                 <span style={{ fontSize: '10px', color: 'var(--text-light)' }}>
                   W{t.active[0]}–W{t.active[t.active.length - 1]}
