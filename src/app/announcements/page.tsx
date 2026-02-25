@@ -4,10 +4,9 @@ import { useState } from 'react';
 import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
 import { useData, AnnouncementItem } from '@/lib/DataContext';
+import { ModalContent } from '@/lib/ui';
 
-type ModalContent = { title: string; body: React.ReactNode } | null;
-
-const EMPTY_ANN: AnnouncementItem = { title: '', date: 'Gerade eben', author: 'PM', priority: 'normal' as const, body: '', role: 'all' };
+const EMPTY_ANN: AnnouncementItem = { title: '', date: 'Gerade eben', author: 'PM', priority: 'normal', body: '', role: 'all' };
 
 export default function AnnouncementsPage() {
   return <AppShell><AnnouncementsContent /></AppShell>;
@@ -26,13 +25,12 @@ function AnnouncementsContent() {
   const startEdit = (i: number) => { setForm({ ...announcements[i] }); setEditIdx(i); setShowForm(true); setModal(null); };
   const handleSave = () => {
     if (!form.title.trim() || !form.body.trim()) return;
-    if (editIdx !== null) updateAnnouncement(editIdx, form);
-    else addAnnouncement(form);
+    if (editIdx !== null) updateAnnouncement(editIdx, form); else addAnnouncement(form);
     setShowForm(false); setEditIdx(null);
   };
   const handleDelete = (i: number) => { deleteAnnouncement(i); setModal(null); };
 
-  const openAnnouncement = (a: AnnouncementItem, i: number) => setModal({
+  const openAnn = (a: AnnouncementItem, i: number) => setModal({
     title: a.title,
     body: (
       <>
@@ -70,7 +68,7 @@ function AnnouncementsContent() {
           <div className="crud-form">
             <div><label>Titel</label><input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Betreff..." /></div>
             <div className="crud-form-row">
-              <div><label>Priorität</label><select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value as AnnouncementItem['priority'] }))}>
+              <div><label>Priorität</label><select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}>
                 <option value="high">Hoch</option><option value="normal">Normal</option>
               </select></div>
               <div><label>Sichtbarkeit</label><select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
@@ -89,7 +87,7 @@ function AnnouncementsContent() {
       <div className="glass-card" style={{ marginTop: showForm ? 16 : 0 }}>
         <div className="card-title">Ankündigungen &amp; Mitteilungen — {announcements.length}</div>
         {announcements.map((a, i) => (
-          <div key={i} className={`ann ${a.priority === 'high' ? 'ann-h' : 'ann-n'}`} data-clickable onClick={() => openAnnouncement(a, i)}>
+          <div key={i} className={`ann ${a.priority === 'high' ? 'ann-h' : 'ann-n'}`} data-clickable onClick={() => openAnn(a, i)}>
             <div className="ann-ttl">{a.title}</div>
             <div className="ann-meta">
               {a.author} &middot; {a.date}
@@ -98,7 +96,7 @@ function AnnouncementsContent() {
             <div className="ann-body">{a.body}</div>
           </div>
         ))}
-        {announcements.length === 0 && <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: 13 }}>Keine Ankündigungen vorhanden.</div>}
+        {announcements.length === 0 && <div className="empty-state">Keine Ankündigungen vorhanden.</div>}
       </div>
 
       <div className="dripfy-footer" style={{ marginTop: 16 }}>Powered by <a href="https://dripfy.app" target="_blank" rel="noopener noreferrer">DRIPFY.APP</a></div>

@@ -5,6 +5,8 @@ import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
 import GanttTaskManager from '@/components/GanttTaskManager';
 import { useData, GanttPhase, GanttTaskItem } from '@/lib/DataContext';
+import { GANTT_ASSIGNEES } from '@/lib/constants';
+import { ModalContent } from '@/lib/ui';
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   done:    { label: 'Abgeschlossen', color: '#2F4F4F', bg: 'rgba(47,79,79,0.12)' },
@@ -12,22 +14,19 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
   pending: { label: 'Ausstehend', color: '#888', bg: 'rgba(136,136,136,0.1)' },
 };
 
-type ModalContent = { title: string; body: React.ReactNode } | null;
-
-function getAssigneeInfo(id?: string) {
-  const { GANTT_ASSIGNEES } = require('@/lib/constants');
+function getAssignee(id?: string) {
   if (!id) return null;
-  return GANTT_ASSIGNEES.find((a: { id: string }) => a.id === id) || null;
+  return GANTT_ASSIGNEES.find(a => a.id === id) || null;
 }
 
 function AssigneeBadge({ id, size = 'sm' }: { id?: string; size?: 'sm' | 'md' }) {
-  const info = getAssigneeInfo(id);
+  const info = getAssignee(id);
   if (!info) return null;
-  const isMd = size === 'md';
+  const md = size === 'md';
   return (
     <span title={`${info.name} (${info.role})`} style={{
-      fontSize: isMd ? '10px' : '9px', fontWeight: 700, padding: isMd ? '2px 7px' : '1px 5px',
-      borderRadius: '4px', letterSpacing: '0.5px',
+      fontSize: md ? 10 : 9, fontWeight: 700, padding: md ? '2px 7px' : '1px 5px',
+      borderRadius: 4, letterSpacing: '0.5px',
       background: `${info.color}15`, color: info.color, border: `1px solid ${info.color}30`,
       whiteSpace: 'nowrap', fontFamily: 'var(--f-body)',
     }}>{info.id}</span>
@@ -45,51 +44,47 @@ function ProjektzeitplanContent() {
   const [editMode, setEditMode] = useState(false);
   const [modal, setModal] = useState<ModalContent>(null);
 
-  const handleAddTask = (phaseIndex: number, task: GanttTaskItem) => {
+  const handleAddTask = (pi: number, task: GanttTaskItem) => {
     const copy = ganttData.map(p => ({ ...p, tasks: [...p.tasks] }));
-    copy[phaseIndex].tasks.push(task);
+    copy[pi].tasks.push(task);
     setGanttData(copy);
   };
 
-  const handleRemoveTask = (phaseIndex: number, taskIndex: number) => {
+  const handleRemoveTask = (pi: number, ti: number) => {
     const copy = ganttData.map(p => ({ ...p, tasks: [...p.tasks] }));
-    copy[phaseIndex].tasks.splice(taskIndex, 1);
+    copy[pi].tasks.splice(ti, 1);
     setGanttData(copy);
   };
 
   const openPhaseDetail = (phase: GanttPhase) => {
-    const doneCount = phase.tasks.filter(t => t.status === 'done').length;
-    const activeCount = phase.tasks.filter(t => t.status === 'active').length;
-    const pendingCount = phase.tasks.filter(t => t.status === 'pending').length;
+    const dc = phase.tasks.filter(t => t.status === 'done').length;
+    const ac = phase.tasks.filter(t => t.status === 'active').length;
+    const pc = phase.tasks.filter(t => t.status === 'pending').length;
     setModal({
       title: phase.label,
       body: (
         <>
           <div className="detail-field"><span className="detail-label">Gesamt Aufgaben</span><span className="detail-value">{phase.tasks.length}</span></div>
-          <div className="detail-field"><span className="detail-label">Abgeschlossen</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{doneCount}</span></div>
-          <div className="detail-field"><span className="detail-label">In Bearbeitung</span><span className="detail-value" style={{ color: 'var(--bronze)' }}>{activeCount}</span></div>
-          <div className="detail-field"><span className="detail-label">Ausstehend</span><span className="detail-value">{pendingCount}</span></div>
+          <div className="detail-field"><span className="detail-label">Abgeschlossen</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{dc}</span></div>
+          <div className="detail-field"><span className="detail-label">In Bearbeitung</span><span className="detail-value" style={{ color: 'var(--bronze)' }}>{ac}</span></div>
+          <div className="detail-field"><span className="detail-label">Ausstehend</span><span className="detail-value">{pc}</span></div>
           <div className="detail-section">
             <div className="detail-section-title">Aufgaben</div>
             {phase.tasks.map((t, i) => {
-              const assigneeInfo = getAssigneeInfo(t.assignee);
+              const ai = getAssignee(t.assignee);
               return (
-                <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(184,115,51,0.06)' }}>
+                <div key={i} className="list-item">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: STATUS_LABELS[t.status]?.color || '#888', flexShrink: 0 }} />
                       <span style={{ fontSize: 12, color: 'var(--text)', fontWeight: 500 }}>{t.name}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                      {assigneeInfo && <AssigneeBadge id={t.assignee} />}
+                      {ai && <AssigneeBadge id={t.assignee} />}
                       <span style={{ fontSize: 10, color: 'var(--text-light)' }}>W{t.active[0]}–W{t.active[t.active.length - 1]}</span>
                     </div>
                   </div>
-                  {t.description && (
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: 13, lineHeight: '1.4' }}>
-                      {t.description.length > 80 ? t.description.substring(0, 80) + '…' : t.description}
-                    </div>
-                  )}
+                  {t.description && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3, paddingLeft: 13, lineHeight: 1.4 }}>{t.description.length > 80 ? t.description.substring(0, 80) + '…' : t.description}</div>}
                 </div>
               );
             })}
@@ -100,23 +95,23 @@ function ProjektzeitplanContent() {
   };
 
   const openTaskDetail = (task: GanttTaskItem, phase: GanttPhase) => {
-    const statusInfo = STATUS_LABELS[task.status];
-    const assigneeInfo = getAssigneeInfo(task.assignee);
+    const si = STATUS_LABELS[task.status];
+    const ai = getAssignee(task.assignee);
     setModal({
       title: task.name,
       body: (
         <>
           <div className="detail-field"><span className="detail-label">Phase</span><span className="detail-value" style={{ color: phase.color }}>{phase.label}</span></div>
           <div className="detail-field"><span className="detail-label">Status</span>
-            <span className="detail-value"><span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: statusInfo?.bg, color: statusInfo?.color }}>{statusInfo?.label}</span></span>
+            <span className="detail-value"><span style={{ display: 'inline-block', padding: '2px 10px', borderRadius: 12, fontSize: 11, fontWeight: 600, background: si?.bg, color: si?.color }}>{si?.label}</span></span>
           </div>
-          {assigneeInfo && (
+          {ai && (
             <div className="detail-field">
               <span className="detail-label">Verantwortlich</span>
               <span className="detail-value">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${assigneeInfo.color}18`, color: assigneeInfo.color, fontSize: 10, fontWeight: 700, border: `1.5px solid ${assigneeInfo.color}40`, fontFamily: 'var(--f-body)' }}>{assigneeInfo.id}</div>
-                  <div><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{assigneeInfo.name}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{assigneeInfo.role}</div></div>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${ai.color}18`, color: ai.color, fontSize: 10, fontWeight: 700, border: `1.5px solid ${ai.color}40`, fontFamily: 'var(--f-body)' }}>{ai.id}</div>
+                  <div><div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>{ai.name}</div><div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{ai.role}</div></div>
                 </div>
               </span>
             </div>
@@ -126,7 +121,7 @@ function ProjektzeitplanContent() {
           {task.description && (
             <div className="detail-section">
               <div className="detail-section-title">Beschreibung</div>
-              <div style={{ fontSize: 12, lineHeight: '1.6', color: 'var(--text)', padding: '10px 12px', borderRadius: 8, background: 'rgba(245,230,211,0.3)', border: '1px solid rgba(184,115,51,0.08)' }}>{task.description}</div>
+              <div style={{ fontSize: 12, lineHeight: 1.6, color: 'var(--text)', padding: '10px 12px', borderRadius: 8, background: 'rgba(245,230,211,0.3)', border: '1px solid rgba(184,115,51,0.08)' }}>{task.description}</div>
             </div>
           )}
           <div className="detail-section">
@@ -169,7 +164,7 @@ function ProjektzeitplanContent() {
                 {weeks.map(w => (
                   <th key={w} style={{ position: 'relative', color: w === currentWeek ? '#c0392b' : undefined, fontWeight: w === currentWeek ? 700 : undefined }}>
                     W{w}
-                    {w === currentWeek && (<div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 2, height: 6, background: 'rgba(192,57,43,0.6)', borderRadius: 1 }} />)}
+                    {w === currentWeek && <div style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 2, height: 6, background: 'rgba(192,57,43,0.6)', borderRadius: 1 }} />}
                   </th>
                 ))}
               </tr>
@@ -177,7 +172,7 @@ function ProjektzeitplanContent() {
             <tbody>
               {ganttData.map((phase, pi) => (
                 <PhaseGroup key={pi} phase={phase} weeks={weeks} currentWeek={currentWeek} editMode={editMode}
-                  onPhaseClick={() => openPhaseDetail(phase)} onTaskClick={(task) => openTaskDetail(task, phase)} onRemoveTask={(taskIndex) => handleRemoveTask(pi, taskIndex)} />
+                  onPhaseClick={() => openPhaseDetail(phase)} onTaskClick={t => openTaskDetail(t, phase)} onRemoveTask={ti => handleRemoveTask(pi, ti)} />
               ))}
             </tbody>
           </table>
@@ -185,7 +180,7 @@ function ProjektzeitplanContent() {
         <div className="dripfy-footer">Powered by <a href="https://dripfy.app" target="_blank" rel="noopener noreferrer">DRIPFY.APP</a></div>
       </div>
 
-      {editMode && (<GanttTaskManager ganttData={ganttData} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} />)}
+      {editMode && <GanttTaskManager ganttData={ganttData} onAddTask={handleAddTask} onRemoveTask={handleRemoveTask} />}
       <DetailModal open={!!modal} onClose={() => setModal(null)} title={modal?.title || ''}>{modal?.body}</DetailModal>
     </>
   );
@@ -212,33 +207,33 @@ function TaskRow({ task, phase, weeks, currentWeek, editMode, onTaskClick, onRem
 }) {
   const [hoveredWeek, setHoveredWeek] = useState<number | null>(null);
   const [isRowHovered, setIsRowHovered] = useState(false);
-  const statusInfo = STATUS_LABELS[task.status];
+  const si = STATUS_LABELS[task.status];
 
   return (
     <tr onMouseEnter={() => setIsRowHovered(true)} onMouseLeave={() => { setIsRowHovered(false); setHoveredWeek(null); }}
       style={{ transition: 'background 0.15s', background: isRowHovered ? 'rgba(184,115,51,0.04)' : 'transparent' }}>
-      <td onClick={onTaskClick} style={{ cursor: 'pointer', transition: 'color 0.15s', color: isRowHovered ? 'var(--forest)' : undefined, fontWeight: isRowHovered ? 500 : undefined }} title={`${task.name} → ${statusInfo?.label}`}>
+      <td onClick={onTaskClick} style={{ cursor: 'pointer', transition: 'color 0.15s', color: isRowHovered ? 'var(--forest)' : undefined, fontWeight: isRowHovered ? 500 : undefined }} title={`${task.name} → ${si?.label}`}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {editMode && (<button className="gantt-remove-btn" onClick={(e) => { e.stopPropagation(); onRemove(); }} title="Aufgabe entfernen" style={{ width: 18, height: 18, fontSize: 10 }}>✕</button>)}
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: statusInfo?.color, flexShrink: 0, boxShadow: task.status === 'active' ? `0 0 6px ${statusInfo?.color}50` : 'none' }} />
+          {editMode && <button className="gantt-remove-btn" onClick={e => { e.stopPropagation(); onRemove(); }} title="Aufgabe entfernen" style={{ width: 18, height: 18, fontSize: 10 }}>✕</button>}
+          <div style={{ width: 7, height: 7, borderRadius: '50%', background: si?.color, flexShrink: 0, boxShadow: task.status === 'active' ? `0 0 6px ${si?.color}50` : 'none' }} />
           <span>{task.name}</span>
-          {task.assignee && (<AssigneeBadge id={task.assignee} />)}
-          {isRowHovered && !editMode && (<span style={{ fontSize: 10, color: 'var(--bronze)', marginLeft: 'auto', whiteSpace: 'nowrap', opacity: 0.7 }}>→</span>)}
+          {task.assignee && <AssigneeBadge id={task.assignee} />}
+          {isRowHovered && !editMode && <span style={{ fontSize: 10, color: 'var(--bronze)', marginLeft: 'auto', whiteSpace: 'nowrap', opacity: 0.7 }}>→</span>}
         </div>
       </td>
       {weeks.map(w => {
         const isActive = task.active.includes(w);
-        const isCurrentWeek = w === currentWeek;
-        const isCellHovered = hoveredWeek === w && isActive;
+        const isCW = w === currentWeek;
+        const isHovered = hoveredWeek === w && isActive;
         return (
-          <td key={w} style={{ padding: isActive ? '2px' : undefined, cursor: isActive ? 'pointer' : 'default', position: 'relative', borderLeft: isCurrentWeek ? '2px solid rgba(192,57,43,0.2)' : undefined }}
+          <td key={w} style={{ padding: isActive ? '2px' : undefined, cursor: isActive ? 'pointer' : 'default', position: 'relative', borderLeft: isCW ? '2px solid rgba(192,57,43,0.2)' : undefined }}
             onClick={() => isActive && onTaskClick()} onMouseEnter={() => isActive && setHoveredWeek(w)} onMouseLeave={() => setHoveredWeek(null)} title={isActive ? `${task.name} · W${w}` : undefined}>
             {isActive && (
-              <div className="gc" style={{ background: isCellHovered ? `${phase.color}55` : `${phase.color}30`, border: `1px solid ${isCellHovered ? phase.color : `${phase.color}70`}`, transform: isCellHovered ? 'scale(1.15)' : 'scale(1)', transition: 'all 0.15s ease', borderRadius: 3, position: 'relative', zIndex: isCellHovered ? 2 : 1 }} />
+              <div className="gc" style={{ background: isHovered ? `${phase.color}55` : `${phase.color}30`, border: `1px solid ${isHovered ? phase.color : `${phase.color}70`}`, transform: isHovered ? 'scale(1.15)' : 'scale(1)', transition: 'all 0.15s ease', borderRadius: 3, position: 'relative', zIndex: isHovered ? 2 : 1 }} />
             )}
-            {isCellHovered && (
+            {isHovered && (
               <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: 'var(--forest)', color: '#fff', padding: '4px 8px', borderRadius: 4, fontSize: 10, fontFamily: 'var(--f-body)', whiteSpace: 'nowrap', zIndex: 100, pointerEvents: 'none', boxShadow: 'var(--shadow-sm)', marginBottom: 4 }}>
-                W{w} · {statusInfo?.label}
+                W{w} · {si?.label}
               </div>
             )}
           </td>

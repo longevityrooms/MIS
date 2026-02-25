@@ -4,13 +4,9 @@ import { useState } from 'react';
 import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
 import { useData, BudgetCat } from '@/lib/DataContext';
-
-const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `€${(v / 1000).toFixed(0)}K` : `€${v}`;
+import { fmtEur, ModalContent } from '@/lib/ui';
 
 const COLORS = ['#2F4F4F', '#B87333', '#4d7c7c', '#c0392b', '#8b6914', '#5a8080', '#a0522d', '#4d6c6c', '#c49a6c', '#6b8e8e'];
-
-type ModalContent = { title: string; body: React.ReactNode } | null;
-
 const EMPTY_CAT: BudgetCat = { name: '', budget: 0, spent: 0, color: '#2F4F4F' };
 
 export default function BudgetPage() {
@@ -35,28 +31,23 @@ function BudgetContent() {
   const startEditCat = (i: number) => { setForm({ ...cats[i] }); setEditIdx(i); setShowForm(true); setModal(null); };
   const handleSave = () => {
     if (!form.name.trim()) return;
-    if (editIdx !== null) updateBudgetCategory(editIdx, form);
-    else addBudgetCategory(form);
+    if (editIdx !== null) updateBudgetCategory(editIdx, form); else addBudgetCategory(form);
     setShowForm(false); setEditIdx(null);
   };
   const handleDeleteCat = (i: number) => { deleteBudgetCategory(i); setModal(null); };
-
-  const handleSaveTotals = () => {
-    updateBudgetTotals(totalForm);
-    setShowTotalEdit(false);
-  };
+  const handleSaveTotals = () => { updateBudgetTotals(totalForm); setShowTotalEdit(false); };
 
   const openCat = (cat: BudgetCat, i: number) => {
-    const catPercent = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
+    const pct = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
     setModal({
       title: cat.name,
       body: (
         <>
           <div className="detail-field"><span className="detail-label">Budget</span><span className="detail-value">{fmtEur(cat.budget)}</span></div>
           <div className="detail-field"><span className="detail-label">Ausgegeben</span><span className="detail-value">{fmtEur(cat.spent)}</span></div>
-          <div className="detail-field"><span className="detail-label">Verbrauch</span><span className="detail-value">{catPercent}%</span></div>
+          <div className="detail-field"><span className="detail-label">Verbrauch</span><span className="detail-value">{pct}%</span></div>
           <div className="detail-field"><span className="detail-label">Verbleibend</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{fmtEur(cat.budget - cat.spent)}</span></div>
-          <div className="pb" style={{ height: 8, margin: '12px 0' }}><div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: 8 }} /></div>
+          <div className="pb" style={{ height: 8, margin: '12px 0' }}><div className="pb-fill" style={{ width: `${pct}%`, background: cat.color, height: 8 }} /></div>
           {isPM && (
             <div className="crud-actions" style={{ marginTop: 16 }}>
               <button className="crud-btn crud-btn-edit" onClick={() => startEditCat(i)}>✎ Bearbeiten</button>
@@ -86,7 +77,6 @@ function BudgetContent() {
         <div className="stat"><div className="stat-lbl">Verfügbar</div><div className="stat-val">{fmtEur(available)}</div><div className="stat-sub">Verbleibend</div></div>
       </div>
 
-      {/* Edit Totals Form */}
       {showTotalEdit && isPM && (
         <div className="glass-card" style={{ marginTop: 16 }}>
           <div className="card-title">Gesamtbudget bearbeiten</div>
@@ -104,7 +94,6 @@ function BudgetContent() {
         </div>
       )}
 
-      {/* Add/Edit Category Form */}
       {showForm && isPM && (
         <div className="glass-card" style={{ marginTop: 16 }}>
           <div className="card-title">{editIdx !== null ? 'Kategorie bearbeiten' : 'Neue Kategorie'}</div>
@@ -139,15 +128,14 @@ function BudgetContent() {
           <span>Gesamtverbrauch</span><span>{overallPercent}%</span>
         </div>
         <div className="pb" style={{ height: 6 }}><div className="pb-fill" style={{ width: `${overallPercent}%`, height: 6 }} /></div>
-
         {cats.map((cat, i) => {
-          const catPercent = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
+          const pct = cat.budget > 0 ? Math.round((cat.spent / cat.budget) * 100) : 0;
           return (
             <div key={i} className="brow" data-clickable onClick={() => openCat(cat, i)}>
               <div className="b-dot" style={{ background: cat.color }} />
               <div className="b-name">{cat.name}</div>
               <div style={{ flex: 1, padding: '0 16px', minWidth: 80 }}>
-                <div className="pb" style={{ height: 4 }}><div className="pb-fill" style={{ width: `${catPercent}%`, background: cat.color, height: 4 }} /></div>
+                <div className="pb" style={{ height: 4 }}><div className="pb-fill" style={{ width: `${pct}%`, background: cat.color, height: 4 }} /></div>
               </div>
               <div className="b-nums"><div className="b-sp">{fmtEur(cat.spent)}</div><div className="b-of">/ {fmtEur(cat.budget)}</div></div>
             </div>

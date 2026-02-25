@@ -5,12 +5,7 @@ import AppShell from '@/components/AppShell';
 import DetailModal from '@/components/DetailModal';
 import { useData } from '@/lib/DataContext';
 import { PHASES, MILESTONES } from '@/lib/constants';
-
-const fmtEur = (v: number) => v >= 1000000 ? `€${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `€${(v / 1000).toFixed(0)}K` : `€${v}`;
-const impactLabel = (s: string) => { switch (s) { case 'critical': return 'Kritisch'; case 'high': return 'Hoch'; case 'medium': return 'Mittel'; default: return s; } };
-const probLbl = (s: string) => { switch (s) { case 'high': return 'Hoch'; case 'medium': return 'Mittel'; case 'low': return 'Niedrig'; default: return s; } };
-
-type ModalContent = { title: string; body: React.ReactNode } | null;
+import { fmtEur, priorityClass, priorityLabel, statusClass, statusLabel, impactLabel, probLabel, msIcon, ModalContent } from '@/lib/ui';
 
 export default function DashboardPage() {
   return <AppShell><DashboardContent /></AppShell>;
@@ -20,9 +15,7 @@ function DashboardContent() {
   const { tasks, risks, budget } = useData();
   const [modal, setModal] = useState<ModalContent>(null);
 
-  const totalSpent = budget.spent;
-  const totalCommitted = budget.committed;
-  const totalBudget = budget.total;
+  const { total: totalBudget, spent: totalSpent, committed: totalCommitted } = budget;
   const available = totalBudget - totalSpent - totalCommitted;
   const budgetPct = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
@@ -30,12 +23,6 @@ function DashboardContent() {
   const activeRisks = risks.filter(r => r.status === 'active').length;
   const criticalTasks = tasks.filter(t => t.priority === 'critical');
   const doneTasks = tasks.filter(t => t.status === 'done').length;
-
-  const priorityBadge = (p: string) => { switch (p) { case 'critical': return 'pc'; case 'high': return 'pc'; case 'medium': return 'ph2'; default: return 'pm2'; } };
-  const priorityLabel = (p: string) => { switch (p) { case 'critical': return 'Kritisch'; case 'high': return 'Hoch'; case 'medium': return 'Mittel'; default: return 'Niedrig'; } };
-  const statusBadge = (s: string) => { switch (s) { case 'done': return 'sd'; case 'in_progress': return 'sp'; case 'blocked': return 'sbl'; default: return 'sw'; } };
-  const statusLabel = (s: string) => { switch (s) { case 'done': return 'Abgeschlossen'; case 'in_progress': return 'In Bearbeitung'; case 'blocked': return 'Blockiert'; case 'not_started': return 'Offen'; default: return s; } };
-  const msIcon = (status: 'done' | 'active' | 'pending') => { switch (status) { case 'done': return '✓'; case 'active': return '◉'; case 'pending': return '○'; } };
 
   const openProgress = () => setModal({ title: 'Gesamtfortschritt', body: (
     <>
@@ -47,19 +34,18 @@ function DashboardContent() {
       </div>
       <div className="detail-section">
         <div className="detail-section-title">Aufgaben-Übersicht</div>
-        <div className="detail-field"><span className="detail-label">Gesamt</span><span className="detail-value">{tasks.length}</span></div>
-        <div className="detail-field"><span className="detail-label">Abgeschlossen</span><span className="detail-value">{doneTasks}</span></div>
-        <div className="detail-field"><span className="detail-label">In Bearbeitung</span><span className="detail-value">{tasks.filter(t => t.status === 'in_progress').length}</span></div>
-        <div className="detail-field"><span className="detail-label">Nicht begonnen</span><span className="detail-value">{tasks.filter(t => t.status === 'not_started').length}</span></div>
+        {[['Gesamt', tasks.length], ['Abgeschlossen', doneTasks], ['In Bearbeitung', tasks.filter(t => t.status === 'in_progress').length], ['Nicht begonnen', tasks.filter(t => t.status === 'not_started').length]].map(([l, v]) => (
+          <div key={l as string} className="detail-field"><span className="detail-label">{l}</span><span className="detail-value">{v}</span></div>
+        ))}
       </div>
     </>
   ) });
 
   const openBudgetStat = () => setModal({ title: 'Budgetübersicht', body: (
     <>
-      <div className="detail-field"><span className="detail-label">Gesamtbudget</span><span className="detail-value">{fmtEur(totalBudget)}</span></div>
-      <div className="detail-field"><span className="detail-label">Ausgegeben</span><span className="detail-value">{fmtEur(totalSpent)}</span></div>
-      <div className="detail-field"><span className="detail-label">Gebunden</span><span className="detail-value">{fmtEur(totalCommitted)}</span></div>
+      {[['Gesamtbudget', totalBudget], ['Ausgegeben', totalSpent], ['Gebunden', totalCommitted]].map(([l, v]) => (
+        <div key={l as string} className="detail-field"><span className="detail-label">{l}</span><span className="detail-value">{fmtEur(v as number)}</span></div>
+      ))}
       <div className="detail-field"><span className="detail-label">Verfügbar</span><span className="detail-value" style={{ color: 'var(--forest)' }}>{fmtEur(available)}</span></div>
       <div className="detail-section">
         <div className="detail-section-title">Nach Kategorie</div>
@@ -74,9 +60,9 @@ function DashboardContent() {
   const openOpenTasks = () => setModal({ title: `Offene Aufgaben (${openTasks})`, body: (
     <>
       {tasks.filter(t => t.status !== 'done').map((t, i) => (
-        <div key={i} style={{ padding: '8px 0', borderBottom: '1px solid rgba(184,115,51,0.08)' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{t.title}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-light)', marginTop: 2 }}>Phase {t.phase} · {priorityLabel(t.priority)} · {statusLabel(t.status)} · Fällig {t.due}</div>
+        <div key={i} className="list-item">
+          <div className="list-item-title">{t.title}</div>
+          <div className="list-item-meta">Phase {t.phase} · {priorityLabel(t.priority)} · {statusLabel(t.status)} · Fällig {t.due}</div>
           <div className="pb" style={{ height: 3, marginTop: 4 }}><div className="pb-fill" style={{ width: `${t.progress}%`, background: 'var(--forest)', height: 3 }} /></div>
         </div>
       ))}
@@ -86,10 +72,10 @@ function DashboardContent() {
   const openActiveRisks = () => setModal({ title: `Aktive Risiken (${activeRisks})`, body: (
     <>
       {risks.filter(r => r.status === 'active').map((r, i) => (
-        <div key={i} style={{ padding: '10px 0', borderBottom: '1px solid rgba(184,115,51,0.08)' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{r.title}</div>
-          <div style={{ fontSize: 10, color: 'var(--text-light)', marginTop: 2 }}>Auswirkung: {impactLabel(r.impact)} · Wahrscheinlichkeit: {probLbl(r.prob)} · {r.owner}</div>
-          {r.mitigation && (<div style={{ fontSize: 10, color: 'var(--forest)', marginTop: 4, fontWeight: 600 }}>MINDERUNG: <span style={{ fontWeight: 400, color: 'var(--text-light)' }}>{r.mitigation}</span></div>)}
+        <div key={i} className="list-item">
+          <div className="list-item-title">{r.title}</div>
+          <div className="list-item-meta">Auswirkung: {impactLabel(r.impact)} · Wahrscheinlichkeit: {probLabel(r.prob)} · {r.owner}</div>
+          {r.mitigation && (<div className="list-item-note"><span className="list-item-note-label">MINDERUNG:</span> {r.mitigation}</div>)}
         </div>
       ))}
     </>
@@ -103,11 +89,9 @@ function DashboardContent() {
       <div className="detail-section">
         <div className="detail-section-title">Aufgaben in dieser Phase</div>
         {tasks.filter(t => t.phase === p.id).map((t, i) => (
-          <div key={i} style={{ padding: '6px 0', borderBottom: '1px solid rgba(184,115,51,0.06)' }}>
-            <div style={{ fontSize: 12, color: 'var(--text)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>{t.title}</span>
-              <span className={`sb ${statusBadge(t.status)}`} style={{ fontSize: 9, marginLeft: 8, flexShrink: 0 }}>{statusLabel(t.status)}</span>
-            </div>
+          <div key={i} className="list-item-sm">
+            <span>{t.title}</span>
+            <span className={`sb ${statusClass(t.status)}`} style={{ fontSize: 9, marginLeft: 8, flexShrink: 0 }}>{statusLabel(t.status)}</span>
           </div>
         ))}
       </div>
@@ -170,14 +154,14 @@ function DashboardContent() {
             <div key={i} className="task" data-clickable onClick={() => setModal({ title: t.title, body: (
               <>
                 <div className="detail-field"><span className="detail-label">Phase</span><span className="detail-value">Phase {t.phase}</span></div>
-                <div className="detail-field"><span className="detail-label">Priorität</span><span className="detail-value"><span className={`pb-badge ${priorityBadge(t.priority)}`}>{priorityLabel(t.priority)}</span></span></div>
-                <div className="detail-field"><span className="detail-label">Status</span><span className="detail-value"><span className={`sb ${statusBadge(t.status)}`}>{statusLabel(t.status)}</span></span></div>
+                <div className="detail-field"><span className="detail-label">Priorität</span><span className="detail-value"><span className={`pb-badge ${priorityClass(t.priority)}`}>{priorityLabel(t.priority)}</span></span></div>
+                <div className="detail-field"><span className="detail-label">Status</span><span className="detail-value"><span className={`sb ${statusClass(t.status)}`}>{statusLabel(t.status)}</span></span></div>
                 <div className="detail-field"><span className="detail-label">Fällig</span><span className="detail-value">{t.due}</span></div>
                 <div className="detail-field"><span className="detail-label">Fortschritt</span><span className="detail-value">{t.progress}%</span></div>
               </>
             ) })}>
-              <div className="task-hdr"><div className="task-ttl">{t.title}</div><span className={`pb-badge ${priorityBadge(t.priority)}`}>{priorityLabel(t.priority)}</span></div>
-              <div className="task-meta"><span className={`sb ${statusBadge(t.status)}`}>{statusLabel(t.status)}</span><span>· Fällig {t.due}</span></div>
+              <div className="task-hdr"><div className="task-ttl">{t.title}</div><span className={`pb-badge ${priorityClass(t.priority)}`}>{priorityLabel(t.priority)}</span></div>
+              <div className="task-meta"><span className={`sb ${statusClass(t.status)}`}>{statusLabel(t.status)}</span><span>· Fällig {t.due}</span></div>
               <div className="pb" style={{ height: 4 }}><div className="pb-fill" style={{ width: `${t.progress}%`, background: 'var(--forest)', height: 4 }} /></div>
               <div style={{ fontSize: 10, color: 'var(--text-light)', marginTop: 4 }}>{t.progress}% abgeschlossen</div>
             </div>
@@ -185,11 +169,11 @@ function DashboardContent() {
         </div>
         <div className="glass-card">
           <div className="card-title">Budgetübersicht</div>
-          <div style={{ display: 'flex', gap: 14, marginBottom: 18 }}>
+          <div className="budget-summary">
             {[{ label: 'Ausgegeben', value: totalSpent, color: 'var(--forest)' }, { label: 'Gebunden', value: totalCommitted, color: 'var(--bronze)' }, { label: 'Verfügbar', value: available, color: 'var(--forest2)' }].map(item => (
-              <div key={item.label} style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: 'var(--bronze)', letterSpacing: 1, textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>{item.label}</div>
-                <div style={{ fontFamily: 'var(--f-head)', fontSize: 20, fontWeight: 600, color: item.color }}>{fmtEur(item.value)}</div>
+              <div key={item.label} className="budget-summary-item">
+                <div className="budget-summary-label">{item.label}</div>
+                <div className="budget-summary-value" style={{ color: item.color }}>{fmtEur(item.value)}</div>
               </div>
             ))}
           </div>
