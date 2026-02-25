@@ -73,17 +73,7 @@ export default function AppShell({ children }: AppShellProps) {
     return (
       <div id="app" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: '50%',
-              border: '2px solid rgba(184,115,51,0.3)',
-              borderTopColor: 'var(--bronze)',
-              animation: 'pulse 1s linear infinite',
-              margin: '0 auto 16px',
-            }}
-          />
+          <div className="app-spinner" />
           <p style={{ color: 'var(--text-light)', fontSize: '13px' }}>Laden...</p>
         </div>
       </div>
@@ -153,15 +143,7 @@ export default function AppShell({ children }: AppShellProps) {
                 <span className="ai-dot" />
                 <span className="ai-title">KI-Assistent</span>
               </div>
-              <button
-                onClick={() => setShowMobileChat(false)}
-                style={{
-                  background: 'rgba(47,79,79,0.08)', border: '1px solid rgba(47,79,79,0.15)',
-                  borderRadius: '8px', padding: '4px 10px', cursor: 'pointer',
-                  fontSize: '11px', color: 'var(--forest)', fontWeight: 700,
-                  fontFamily: 'var(--f-body)',
-                }}
-              >
+              <button onClick={() => setShowMobileChat(false)} className="mob-chat-close">
                 Schließen
               </button>
             </div>

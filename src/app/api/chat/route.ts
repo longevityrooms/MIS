@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { CHAT_SYSTEM_PROMPTS } from '@/lib/constants';
+import { CHAT_SYSTEM_PROMPTS } from '@/lib/chat-prompts';
 import { Role, ChatMessage } from '@/lib/types';
 
 const hasAnthropicKey = !!process.env.ANTHROPIC_API_KEY;

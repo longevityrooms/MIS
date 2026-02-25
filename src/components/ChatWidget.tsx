@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage, Role } from '@/lib/types';
-import { CHAT_CHIPS, ROLES, DEMO_USERS } from '@/lib/constants';
+import { ROLES, DEMO_USERS } from '@/lib/constants';
+import { CHAT_CHIPS } from '@/lib/chat-prompts';
 
 interface ChatWidgetProps {
   role: Role;
@@ -91,9 +92,7 @@ export default function ChatWidget({ role }: ChatWidgetProps) {
 
         {loading && (
           <div className="msg msg-ai" style={{ display: 'flex', gap: '4px', padding: '12px 16px' }}>
-            <span style={{ width: 8, height: 8, background: 'var(--bronze)', borderRadius: '50%', opacity: 0.4, animation: 'pulse 1.2s infinite' }} />
-            <span style={{ width: 8, height: 8, background: 'var(--bronze)', borderRadius: '50%', opacity: 0.4, animation: 'pulse 1.2s infinite 0.15s' }} />
-            <span style={{ width: 8, height: 8, background: 'var(--bronze)', borderRadius: '50%', opacity: 0.4, animation: 'pulse 1.2s infinite 0.3s' }} />
+            <span className="chat-dot" /><span className="chat-dot" /><span className="chat-dot" />
           </div>
         )}
 

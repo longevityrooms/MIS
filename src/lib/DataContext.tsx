@@ -19,54 +19,29 @@ export type GanttPhase = { label: string; color: string; link: string; tasks: Ga
 export type GanttTaskItem = { name: string; active: number[]; status: 'done' | 'active' | 'pending'; link: string; assignee?: string; description?: string };
 
 export interface ActivityLogEntry {
-  id: string;
-  timestamp: string;
-  userId: string;
-  userName: string;
-  userRole: Role;
+  id: string; timestamp: string; userId: string; userName: string; userRole: Role;
   action: 'add' | 'edit' | 'delete';
   entity: 'task' | 'risk' | 'budget' | 'announcement' | 'document' | 'gantt';
-  entityTitle: string;
-  details?: string;
+  entityTitle: string; details?: string;
 }
 
 interface CurrentUser { id: string; name: string; role: Role }
 
 interface DataState {
-  tasks: TaskItem[];
-  risks: RiskItem[];
-  budget: BudgetData;
-  announcements: AnnouncementItem[];
-  documents: DocumentItem[];
-  ganttData: GanttPhase[];
-  activityLog: ActivityLogEntry[];
+  tasks: TaskItem[]; risks: RiskItem[]; budget: BudgetData;
+  announcements: AnnouncementItem[]; documents: DocumentItem[];
+  ganttData: GanttPhase[]; activityLog: ActivityLogEntry[];
 }
 
 interface DataContextValue extends DataState {
   currentUser: CurrentUser | null;
-  // Tasks
-  addTask(t: TaskItem): void;
-  updateTask(i: number, u: Partial<TaskItem>): void;
-  deleteTask(i: number): void;
-  // Risks
-  addRisk(r: RiskItem): void;
-  updateRisk(i: number, u: Partial<RiskItem>): void;
-  deleteRisk(i: number): void;
-  // Budget
+  addTask(t: TaskItem): void; updateTask(i: number, u: Partial<TaskItem>): void; deleteTask(i: number): void;
+  addRisk(r: RiskItem): void; updateRisk(i: number, u: Partial<RiskItem>): void; deleteRisk(i: number): void;
   updateBudgetTotals(u: Partial<Pick<BudgetData, 'total' | 'spent' | 'committed'>>): void;
-  addBudgetCategory(c: BudgetCat): void;
-  updateBudgetCategory(i: number, u: Partial<BudgetCat>): void;
-  deleteBudgetCategory(i: number): void;
-  // Announcements
-  addAnnouncement(a: AnnouncementItem): void;
-  updateAnnouncement(i: number, u: Partial<AnnouncementItem>): void;
-  deleteAnnouncement(i: number): void;
-  // Documents
-  addDocument(d: DocumentItem): void;
-  deleteDocument(i: number): void;
-  // Gantt
+  addBudgetCategory(c: BudgetCat): void; updateBudgetCategory(i: number, u: Partial<BudgetCat>): void; deleteBudgetCategory(i: number): void;
+  addAnnouncement(a: AnnouncementItem): void; updateAnnouncement(i: number, u: Partial<AnnouncementItem>): void; deleteAnnouncement(i: number): void;
+  addDocument(d: DocumentItem): void; deleteDocument(i: number): void;
   setGanttData(d: GanttPhase[]): void;
-  // Helpers
   ganttAssignees: typeof GANTT_ASSIGNEES;
 }
 
@@ -84,12 +59,9 @@ const FALLBACK: DataContextValue = {
   setGanttData() {},
 };
 
-export function useData() {
-  const ctx = useContext(DataContext);
-  return ctx || FALLBACK;
-}
+export function useData() { return useContext(DataContext) || FALLBACK; }
 
-/* ── Defaults from constants ─────────────────────────── */
+/* ── Defaults ──────────────────────────────────────────── */
 function defaults(): DataState {
   return {
     tasks: PROJECT_TASKS.map(t => ({ ...t })),
@@ -104,85 +76,79 @@ function defaults(): DataState {
 
 const LS_KEY = 'mis-data-v2';
 
-function loadFromStorage(): DataState | null {
+function loadLS(): DataState | null {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as DataState;
-  } catch { /* ignore */ }
-  return null;
+  try { const r = localStorage.getItem(LS_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
 }
 
-function saveToStorage(s: DataState) {
+function saveLS(s: DataState) {
   if (typeof window === 'undefined') return;
-  try {
-    // Cap activity log at 500
-    const capped = { ...s, activityLog: s.activityLog.slice(0, 500) };
-    localStorage.setItem(LS_KEY, JSON.stringify(capped));
-  } catch { /* ignore */ }
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ ...s, activityLog: s.activityLog.slice(0, 500) })); } catch { /* */ }
 }
 
 /* ── Provider ──────────────────────────────────────────── */
 export function DataProvider({ children, user }: { children: ReactNode; user: CurrentUser | null }) {
-  const [state, setState] = useState<DataState>(() => loadFromStorage() || defaults());
-
-  // Save on every change
-  useEffect(() => { saveToStorage(state); }, [state]);
+  const [state, setState] = useState<DataState>(() => loadLS() || defaults());
+  useEffect(() => { saveLS(state); }, [state]);
 
   const log = useCallback((action: ActivityLogEntry['action'], entity: ActivityLogEntry['entity'], entityTitle: string, details?: string) => {
     if (!user) return;
     const entry: ActivityLogEntry = {
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      timestamp: new Date().toISOString(),
-      userId: user.id,
-      userName: user.name,
-      userRole: user.role,
-      action, entity, entityTitle,
-      details,
+      timestamp: new Date().toISOString(), userId: user.id, userName: user.name, userRole: user.role,
+      action, entity, entityTitle, details,
     };
-    setState(prev => ({ ...prev, activityLog: [entry, ...prev.activityLog] }));
+    setState(p => ({ ...p, activityLog: [entry, ...p.activityLog] }));
   }, [user]);
 
-  /* Tasks */
-  const addTask = useCallback((t: TaskItem) => {
-    setState(p => ({ ...p, tasks: [...p.tasks, t] }));
-    log('add', 'task', t.title);
+  /* Generic array CRUD helpers */
+  type ArrKey = 'tasks' | 'risks' | 'announcements' | 'documents';
+
+  const addItem = useCallback(<T,>(key: ArrKey, item: T, entity: ActivityLogEntry['entity'], title: string, prepend = false) => {
+    setState(p => ({ ...p, [key]: prepend ? [item, ...p[key]] : [...p[key], item] }));
+    log('add', entity, title);
   }, [log]);
-  const updateTask = useCallback((i: number, u: Partial<TaskItem>) => {
+
+  const updateItem = useCallback(<T,>(key: ArrKey, i: number, u: Partial<T>, entity: ActivityLogEntry['entity']) => {
     setState(p => {
-      const arr = [...p.tasks]; const old = arr[i];
-      arr[i] = { ...old, ...u } as TaskItem;
-      return { ...p, tasks: arr };
+      const arr = [...p[key]] as unknown as T[];
+      const rec = arr[i] as unknown as Record<string, unknown>;
+      const title = ((rec?.title ?? rec?.name) || '') as string;
+      arr[i] = { ...arr[i], ...u } as T;
+      log('edit', entity, title);
+      return { ...p, [key]: arr };
     });
-    setState(p => p); // trigger save
-    log('edit', 'task', state.tasks[i]?.title || '');
-  }, [log, state.tasks]);
-  const deleteTask = useCallback((i: number) => {
-    const title = state.tasks[i]?.title || '';
-    setState(p => ({ ...p, tasks: p.tasks.filter((_, idx) => idx !== i) }));
-    log('delete', 'task', title);
-  }, [log, state.tasks]);
+  }, [log]);
+
+  const deleteItem = useCallback((key: ArrKey, i: number, entity: ActivityLogEntry['entity']) => {
+    setState(p => {
+      const arr = p[key] as unknown as Record<string, unknown>[];
+      const title = (arr[i]?.title ?? arr[i]?.name ?? '') as string;
+      log('delete', entity, title);
+      return { ...p, [key]: arr.filter((_, idx) => idx !== i) };
+    });
+  }, [log]);
+
+  /* Tasks */
+  const addTask = useCallback((t: TaskItem) => addItem('tasks', t, 'task', t.title), [addItem]);
+  const updateTask = useCallback((i: number, u: Partial<TaskItem>) => updateItem<TaskItem>('tasks', i, u, 'task'), [updateItem]);
+  const deleteTask = useCallback((i: number) => deleteItem('tasks', i, 'task'), [deleteItem]);
 
   /* Risks */
-  const addRisk = useCallback((r: RiskItem) => {
-    setState(p => ({ ...p, risks: [...p.risks, r] }));
-    log('add', 'risk', r.title);
-  }, [log]);
-  const updateRisk = useCallback((i: number, u: Partial<RiskItem>) => {
-    const title = state.risks[i]?.title || '';
-    setState(p => {
-      const arr = [...p.risks]; arr[i] = { ...arr[i], ...u } as RiskItem;
-      return { ...p, risks: arr };
-    });
-    log('edit', 'risk', title);
-  }, [log, state.risks]);
-  const deleteRisk = useCallback((i: number) => {
-    const title = state.risks[i]?.title || '';
-    setState(p => ({ ...p, risks: p.risks.filter((_, idx) => idx !== i) }));
-    log('delete', 'risk', title);
-  }, [log, state.risks]);
+  const addRisk = useCallback((r: RiskItem) => addItem('risks', r, 'risk', r.title), [addItem]);
+  const updateRisk = useCallback((i: number, u: Partial<RiskItem>) => updateItem<RiskItem>('risks', i, u, 'risk'), [updateItem]);
+  const deleteRisk = useCallback((i: number) => deleteItem('risks', i, 'risk'), [deleteItem]);
 
-  /* Budget */
+  /* Announcements */
+  const addAnnouncement = useCallback((a: AnnouncementItem) => addItem('announcements', a, 'announcement', a.title, true), [addItem]);
+  const updateAnnouncement = useCallback((i: number, u: Partial<AnnouncementItem>) => updateItem<AnnouncementItem>('announcements', i, u, 'announcement'), [updateItem]);
+  const deleteAnnouncement = useCallback((i: number) => deleteItem('announcements', i, 'announcement'), [deleteItem]);
+
+  /* Documents */
+  const addDocument = useCallback((d: DocumentItem) => addItem('documents', d, 'document', d.name, true), [addItem]);
+  const deleteDocument = useCallback((i: number) => deleteItem('documents', i, 'document'), [deleteItem]);
+
+  /* Budget (non-generic — nested structure) */
   const updateBudgetTotals = useCallback((u: Partial<Pick<BudgetData, 'total' | 'spent' | 'committed'>>) => {
     setState(p => ({ ...p, budget: { ...p.budget, ...u } }));
     log('edit', 'budget', 'Gesamtbudget');
@@ -192,48 +158,19 @@ export function DataProvider({ children, user }: { children: ReactNode; user: Cu
     log('add', 'budget', c.name);
   }, [log]);
   const updateBudgetCategory = useCallback((i: number, u: Partial<BudgetCat>) => {
-    const name = state.budget.cats[i]?.name || '';
     setState(p => {
-      const cats = [...p.budget.cats]; cats[i] = { ...cats[i], ...u } as BudgetCat;
+      const cats = [...p.budget.cats];
+      log('edit', 'budget', cats[i]?.name || '');
+      cats[i] = { ...cats[i], ...u } as BudgetCat;
       return { ...p, budget: { ...p.budget, cats } };
     });
-    log('edit', 'budget', name);
-  }, [log, state.budget.cats]);
+  }, [log]);
   const deleteBudgetCategory = useCallback((i: number) => {
-    const name = state.budget.cats[i]?.name || '';
-    setState(p => ({ ...p, budget: { ...p.budget, cats: p.budget.cats.filter((_, idx) => idx !== i) } }));
-    log('delete', 'budget', name);
-  }, [log, state.budget.cats]);
-
-  /* Announcements */
-  const addAnnouncement = useCallback((a: AnnouncementItem) => {
-    setState(p => ({ ...p, announcements: [a, ...p.announcements] }));
-    log('add', 'announcement', a.title);
-  }, [log]);
-  const updateAnnouncement = useCallback((i: number, u: Partial<AnnouncementItem>) => {
-    const title = state.announcements[i]?.title || '';
     setState(p => {
-      const arr = [...p.announcements]; arr[i] = { ...arr[i], ...u } as AnnouncementItem;
-      return { ...p, announcements: arr };
+      log('delete', 'budget', p.budget.cats[i]?.name || '');
+      return { ...p, budget: { ...p.budget, cats: p.budget.cats.filter((_, idx) => idx !== i) } };
     });
-    log('edit', 'announcement', title);
-  }, [log, state.announcements]);
-  const deleteAnnouncement = useCallback((i: number) => {
-    const title = state.announcements[i]?.title || '';
-    setState(p => ({ ...p, announcements: p.announcements.filter((_, idx) => idx !== i) }));
-    log('delete', 'announcement', title);
-  }, [log, state.announcements]);
-
-  /* Documents */
-  const addDocument = useCallback((d: DocumentItem) => {
-    setState(p => ({ ...p, documents: [d, ...p.documents] }));
-    log('add', 'document', d.name);
   }, [log]);
-  const deleteDocument = useCallback((i: number) => {
-    const name = state.documents[i]?.name || '';
-    setState(p => ({ ...p, documents: p.documents.filter((_, idx) => idx !== i) }));
-    log('delete', 'document', name);
-  }, [log, state.documents]);
 
   /* Gantt */
   const setGanttData = useCallback((d: GanttPhase[]) => {
@@ -242,15 +179,13 @@ export function DataProvider({ children, user }: { children: ReactNode; user: Cu
   }, [log]);
 
   const value: DataContextValue = {
-    ...state,
-    currentUser: user,
+    ...state, currentUser: user,
     addTask, updateTask, deleteTask,
     addRisk, updateRisk, deleteRisk,
     updateBudgetTotals, addBudgetCategory, updateBudgetCategory, deleteBudgetCategory,
     addAnnouncement, updateAnnouncement, deleteAnnouncement,
     addDocument, deleteDocument,
-    setGanttData,
-    ganttAssignees: GANTT_ASSIGNEES,
+    setGanttData, ganttAssignees: GANTT_ASSIGNEES,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
